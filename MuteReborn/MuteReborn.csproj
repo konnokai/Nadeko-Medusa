@@ -1,0 +1,56 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFramework>net6.0</TargetFramework>
+
+        <!-- Reduces some boilerplate in your .cs files -->
+        <ImplicitUsings>enable</ImplicitUsings>
+
+        <!-- Use latest .net features -->
+        <LangVersion>preview</LangVersion>
+        <EnablePreviewFeatures>true</EnablePreviewFeatures>
+        <GenerateRequiresPreviewFeaturesAttribute>true</GenerateRequiresPreviewFeaturesAttribute>
+
+        <!-- tell .net that this library will be used as a plugin -->
+        <EnableDynamicLoading>true</EnableDynamicLoading>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <!-- Base medusa package. You MUST reference this in order to have a working medusa -->
+        <!-- Also, this package comes from MyGet, which requires you to have a NuGet.Config file
+        next to your .csproj -->
+        <!-- Version must match your bot's version -->
+        <PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.7" />
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.7">
+          <PrivateAssets>all</PrivateAssets>
+          <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+        </PackageReference>
+        <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.7" />
+        <PackageReference Include="Nadeko.Medusa" Version="4.3.16">
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+
+        <!-- Note: If you want to use NadekoBot services etc... You will have to manually clone
+          the
+        gitlab.com/kwoth/nadekobot repo locally and reference the NadekoBot.csproj because there is
+        no NadekoBot package atm.
+          It is strongly recommended that you checkout a specific
+        tag which matches your version of nadeko,
+          as there could be breaking changes even
+        between minor versions of NadekoBot.
+          For example if you're running NadekoBot
+        4.1.0 locally for which you want to create a medusa for,
+          you should do "git
+        checkout 4.1.0" in your NadekoBot solution and then reference the NadekoBot.csproj
+        -->
+		<ProjectReference Include="..\nadekobot\src\NadekoBot\NadekoBot.csproj" ReferenceOutputAssembly="True">
+		  <PrivateAssets>all</PrivateAssets>
+		</ProjectReference>
+	</ItemGroup>
+
+    <!-- Copy shortcut and full strings to output (if they exist) -->
+    <ItemGroup>
+        <None Update="res.yml;cmds.yml;strings/**">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+        </None>
+    </ItemGroup>
+</Project>

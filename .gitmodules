@@ -1,0 +1,3 @@
+[submodule "nadekobot"]
+	path = nadekobot
+	url = https://gitlab.com/Kwoth/nadekobot/-/tree/4.3.16/src/Nadeko.Medusa?ref_type=tags

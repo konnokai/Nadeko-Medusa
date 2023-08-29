@@ -1,0 +1,32 @@
+settingmutereborn:
+  desc: "設定甦生券的設置\nBuyMuteRebornTicketCost: 每張甦生券需消耗多少貨幣\n(預設1萬，可設定範圍1000~100000)\nEachTicketIncreaseMuteTime: 每張甦生券可增加幾分鐘勞改時間\n(預設5分鐘，可設定範圍5~120分鐘)\nEachTicketDecreaseMuteTime: 每張甦生券可減少幾分鐘勞改時間\n(預設30分鐘，可設定範圍5~120分鐘)\nMaxIncreaseMuteTime: 最大可增加的勞改時間\n(預設30分鐘，可設定範圍10~360分鐘)\n\n若未輸入參數時則顯示現在設定的數值"
+  args:
+    - ""
+    - "BuyMuteRebornTicketCost 10000"
+    - "EachTicketIncreaseMuteTime 5"
+    - "EachTicketDecreaseMuteTime 30"
+    - "MaxIncreaseMuteTime 30"
+sine:
+  desc: "喜內! 卡蚯蚓!\n消耗一張甦生券來勞改指定使用者(可疊加時間)\n勞改時間依各伺服器而定(預設五分鐘)"
+  args:
+    - "@某人"
+    - "(UserId)"
+showmuterebornticketnum:
+  desc: "顯示自己或特定使用者的死者蘇生持有數量"
+  args:
+    - ""
+    - "@某人"
+listmuterebornticketnum:
+  desc: "顯示死者蘇生持有數量清單"
+  args:
+    - ""
+    - "3"
+addmuterebornticketnum:
+  desc: "新增指定使用者的死者蘇生數量(可為負數)\n需先使用ToggleMuteReborn指令開啟狀態才可使用"
+  args:
+    - "1 @某人"
+    - "-1 @某人"
+togglemutereborn:
+  desc: "切換死者蘇生啟用狀態"
+  args:
+    - ""
