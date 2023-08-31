@@ -1,0 +1,12 @@
+restban:
+  desc: "從各群 Ban 掉指定的 UserId"
+  args:
+    - "UserId"
+addrest:
+  desc: "新增 RestBan 伺服器"
+  args:
+    - "GuildId"
+delrest:
+  desc: "移除 RestBan 伺服器"
+  args:
+    - "GuildId"
