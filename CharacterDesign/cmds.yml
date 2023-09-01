@@ -1,0 +1,24 @@
+addchardesign:
+  desc: "新增人設\n\nPlayingStatus格式:\nType:Status|Type:Status...\nType = Playing, Streaming, Listening, Watching"
+  args:
+    - "人設名稱 人設頭像 [PlayingStatus]"
+savechardesign:
+  desc: "保存人設"
+  args:
+    - "[人設名稱]"
+addchardesignplayingstatus:
+  desc: "新增人設PlayingStatus\n\n格式:\nType:Status|Type:Status...\nType = Playing, Streaming, Listening, Watching"
+  args:
+    - "人設名稱 [PlayingStatus]"
+changechardesign:
+  desc: "切換人設"
+  args:
+    - "人設名稱"
+listchardesign:
+  desc: "人設清單"
+  args:
+    - ""
+deletechardesign:
+  desc: "刪除人設"
+  args:
+    - "人設名稱"
