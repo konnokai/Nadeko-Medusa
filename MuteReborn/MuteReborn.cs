@@ -3,32 +3,131 @@ using Discord.WebSocket;
 using MuteReborn.Services;
 using Nadeko.Snake;
 using NadekoBot;
+using NadekoBot.Extensions;
 using NadekoBot.Modules.Administration.Services;
 using NadekoBot.Modules.Gambling.Services;
 using NadekoBot.Services;
 using NadekoBot.Services.Currency;
 using Serilog;
 using System.Diagnostics;
+using System.Text.Json;
 
 namespace MuteReborn;
 
-public sealed class MuteReborn : Snek
+public sealed partial class MuteReborn : Snek
 {
     private readonly MuteService _muteService;
     private readonly DiscordSocketClient _client;
     private readonly GamblingConfigService _gss;
     private readonly ICurrencyService _cs;
     private readonly MuteRebornService _service;
+    private readonly IHttpClientFactory _httpClientFactory;
 
     private string CurrencySign => _gss.Data.Currency.Sign;
 
-    public MuteReborn(MuteService MuteService, DiscordSocketClient client, GamblingConfigService gss, ICurrencyService cs, MuteRebornService service)
+    public MuteReborn(MuteService MuteService, DiscordSocketClient client, GamblingConfigService gss, ICurrencyService cs, MuteRebornService service, IHttpClientFactory httpClientFactory)
     {
         _muteService = MuteService;
         _client = client;
         _gss = gss;
         _cs = cs;
         _service = service;
+        _httpClientFactory = httpClientFactory;
+
+        _client.SelectMenuExecuted += async (component) =>
+        {
+            if (component.HasResponded)
+                return;
+
+            if (component.Data.CustomId.StartsWith("bet_"))
+            {
+                try
+                {
+                    var hSRBetData = _service.RunningHSRBetList.FirstOrDefault((x) => x.BetGuid == component.Data.CustomId);
+                    if (hSRBetData != null && hSRBetData.GamblingMessage.CreatedAt.AddMinutes(5) >= DateTimeOffset.UtcNow)
+                    {
+                        if (component.User.Id == hSRBetData.GamblingUser.Id)
+                        {
+                            await component.RespondAsync($"你不可選擇自己的賭局", ephemeral: true);
+                            return;
+                        }
+
+                        string selectAffix = component.Data.Values.First();
+                        if (hSRBetData.SelectedRankDic.ContainsKey(component.User.Id))
+                        {
+                            hSRBetData.SelectedRankDic[component.User.Id] = selectAffix;
+                            await component.RespondAsync($"更改選擇: {_service.SubAffixList[selectAffix]}", ephemeral: true);
+                        }
+                        else
+                        {
+                            hSRBetData.SelectedRankDic.Add(component.User.Id, selectAffix);
+                            await component.RespondAsync($"選擇: {_service.SubAffixList[selectAffix]}", ephemeral: true);
+                        }
+
+                        await hSRBetData.SelectRankMessage.ModifyAsync((act) =>
+                            act.Embed = new EmbedBuilder()
+                                .WithColor(Color.Green)
+                                .WithTitle("詞條選擇清單")
+                                .WithDescription(string.Join('\n', hSRBetData.SelectedRankDic.Select((x) => $"<@{x.Key}>: {_service.SubAffixList[x.Value]}")))
+                                .Build()
+                            );
+                    }
+                    else
+                    {
+                        await component.RespondAsync($"該賭局已結束或取消", ephemeral: true);
+                        await DisableComponentAsync(component.Message);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Log.Error(ex, $"bet_: {component.User} - {component.Data.CustomId}. {component.Data.Value}");
+                }
+
+            }
+            else if (component.Data.CustomId == "betend")
+            {
+                if (component.User is SocketGuildUser)
+                {
+                    var guild = ((SocketGuildChannel)component.Channel).Guild;
+                    var user = component.User as SocketGuildUser;
+                    if (user.GetRoles().Any((x) => x.Permissions.Administrator) || guild.OwnerId == user.Id)
+                    {
+                        var jsonFile = component.Message.Attachments.FirstOrDefault((x) => x.Filename == "rank.json");
+                        if (jsonFile == null)
+                        {
+                            await component.RespondAsync("缺少 `rank.json` 檔案", ephemeral: true);
+                            await DisableComponentAsync(component.Message);
+                            return;
+                        }
+
+                        await component.DeferAsync(false);
+
+                        using var httpClient = _httpClientFactory.CreateClient();
+                        var jsonText = await httpClient.GetStringAsync(jsonFile.Url);
+                        var json = JsonSerializer.Deserialize<Dictionary<ulong, string>>(jsonText);
+
+                        string selectAffix = component.Data.Values.First();
+                        string result = "";
+                        foreach (var item in json)
+                        {
+                            var addResult = await _service.AddRebornTicketNumAsync(guild, item.Key, item.Value == selectAffix || item.Value == "banker" ? 3 : -1);
+                            result += addResult.Item2;
+
+                            if (!addResult.Item1)
+                                break;
+                        }
+
+                        await component.FollowupAsync(embed: new EmbedBuilder().WithColor(Color.Green).WithDescription(result).Build());
+                        await DisableComponentAsync(component.Message);
+                    }
+                    else
+                    {
+                        await component.RespondAsync("你無權使用本功能", ephemeral: true);
+                        return;
+                    }
+                }
+            }
+        };
     }
 
     public override ValueTask InitializeAsync()
@@ -381,7 +480,7 @@ public sealed class MuteReborn : Snek
             {
                 _service.MutingList.Remove($"{ctx.Guild.Id}-{user.Id}");
                 user = (IGuildUser)ctx.User;
-                await ctx.Channel.SendMessageAsync(embed: ctx.Embed().WithOkColor().WithImageUrl("https://konnokai.me/nadeko/potter.png").Build());
+                await ctx.Channel.SendMessageAsync(embed: ctx.Embed().WithColor(EmbedColor.Ok).WithImageUrl("https://konnokai.me/nadeko/potter.png").Build());
             }
 
             await _muteService.TimedMute(user, ctx.User, time, MuteType.Chat, "主動勞改").ConfigureAwait(false);

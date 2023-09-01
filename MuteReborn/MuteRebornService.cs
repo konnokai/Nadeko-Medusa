@@ -1,6 +1,7 @@
 ﻿using Discord;
 using MuteReborn.Database;
 using MuteReborn.Database.Models;
+using MuteReborn.HSR;
 using Nadeko.Snake;
 using Serilog;
 
@@ -9,6 +10,18 @@ namespace MuteReborn.Services;
 [svc(Lifetime.Singleton)]
 public class MuteRebornService
 {
+    internal List<HSRBetData> RunningHSRBetList { get; private set; } = new();
+    internal Dictionary<string, string> SubAffixList { get; } = new()
+    {
+        { "hp", "大/小生命" },
+        { "defence" , "大/小防禦" },
+        { "attack", "大/小攻擊" },
+        { "critical", "爆率/爆傷" },
+        { "status", "效果抗性/命中" },
+        { "break_damage", "擊破特攻" },
+        { "speed", "速度" }
+    };
+
     public enum SettingType { BuyMuteRebornTicketCost, EachTicketIncreaseMuteTime, EachTicketDecreaseMuteTime, MaxIncreaseMuteTime, GetAllSetting }
     public HashSet<string> MutingList = new();
 

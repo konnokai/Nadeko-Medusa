@@ -30,3 +30,11 @@ togglemutereborn:
   desc: "切換死者蘇生啟用狀態"
   args:
     - ""
+hsrstartbetrelic:
+  desc: "開始詞條賭局"
+  args:
+    - "附加訊息"
+hsrendbetrelic:
+  desc: "結束賭局"
+  args:
+    - ""
