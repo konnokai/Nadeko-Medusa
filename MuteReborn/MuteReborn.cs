@@ -91,10 +91,10 @@ public sealed partial class MuteReborn : Snek
                     var guild = channel.Guild;
                     if (user.GetRoles().Any((x) => x.Permissions.Administrator) || guild.OwnerId == user.Id)
                     {
-                        var jsonFile = component.Message.Attachments.FirstOrDefault((x) => x.Filename == "rank.json");
+                        var jsonFile = component.Message.Attachments.FirstOrDefault((x) => x.Filename == "SPOILER_rank.json");
                         if (jsonFile == null)
                         {
-                            await component.RespondAsync("缺少 `rank.json` 檔案", ephemeral: true);
+                            await component.RespondAsync("缺少 `SPOILER_rank.json` 檔案", ephemeral: true);
                             await DisableComponentAsync(component.Message);
                             return;
                         }

@@ -103,7 +103,7 @@ public partial class MuteReborn
         using var stringStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(hSRBetData.SelectedRankDic)));
 
         await ctx.Channel.SendFilesAsync(
-            attachments: new List<FileAttachment>() { new FileAttachment(imageStream, "rank.jpg"), new FileAttachment(stringStream, "rank.json") },
+            attachments: new List<FileAttachment>() { new FileAttachment(imageStream, "rank.jpg"), new FileAttachment(stringStream, "rank.json", isSpoiler: true) },
             embed: ctx.Embed()
                 .WithColor(EmbedColor.Ok)
                 .WithTitle(hSRBetData.GamblingUser.ToString() + " 的詞條賭局選擇清單")
