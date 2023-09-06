@@ -48,7 +48,7 @@ public partial class MuteReborn
                    .WithTitle(ctx.User.ToString())
                    .WithDescription("附加訊息: " + (string.IsNullOrEmpty(text) ? "無" : text))
                    .WithImageUrl(ctx.Message.Attachments.First().Url)
-                   .WithFooter("請在合成結束後截圖詞條，上傳截圖同時輸入 `~betend` 以供管理員檢查")
+                   .WithFooter("請在合成結束後截圖詞條，上傳截圖同時輸入 `~hsrbe` 以供管理員檢查")
                    .Build(),
                components: BuildAffixSelectMenu(betGuid));
 
