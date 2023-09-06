@@ -108,6 +108,8 @@ public partial class MuteReborn
                 .WithColor(EmbedColor.Ok)
                 .WithTitle(hSRBetData.GamblingUser.ToString() + " 的詞條賭局選擇清單")
                 .WithDescription($"附加訊息: {hSRBetData.AddMessage}\n\n" +
+                    $"詞條選擇清單:\n" +
+                    $"{string.Join('\n', hSRBetData.SelectedRankDic.Take(hSRBetData.SelectedRankDic.Count - 1).Select((x) => $"<@{x.Key}>: {_service.SubAffixList[x.Value]}"))}\n\n" +
                     Format.Url($"賭局連結", hSRBetData.GamblingMessage.GetJumpUrl()))
                 .WithImageUrl("attachment://rank.jpg")
                 .Build(),
