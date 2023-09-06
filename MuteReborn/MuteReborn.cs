@@ -33,106 +33,108 @@ public sealed partial class MuteReborn : Snek
         _cs = cs;
         _service = service;
         _httpClientFactory = httpClientFactory;
+    }
 
-        _client.SelectMenuExecuted += async (component) =>
+    private async Task _client_SelectMenuExecuted(SocketMessageComponent component)
+    {
+        if (component.HasResponded)
+            return;
+
+        if (component.Data.CustomId.StartsWith("bet_"))
         {
-            if (component.HasResponded)
-                return;
-
-            if (component.Data.CustomId.StartsWith("bet_"))
+            try
             {
-                try
+                var hSRBetData = _service.RunningHSRBetList.FirstOrDefault((x) => x.BetGuid == component.Data.CustomId);
+                if (hSRBetData != null && hSRBetData.GamblingMessage.CreatedAt.AddMinutes(5) >= DateTimeOffset.UtcNow)
                 {
-                    var hSRBetData = _service.RunningHSRBetList.FirstOrDefault((x) => x.BetGuid == component.Data.CustomId);
-                    if (hSRBetData != null && hSRBetData.GamblingMessage.CreatedAt.AddMinutes(5) >= DateTimeOffset.UtcNow)
+                    if (component.User.Id == hSRBetData.GamblingUser.Id)
                     {
-                        if (component.User.Id == hSRBetData.GamblingUser.Id)
-                        {
-                            await component.RespondAsync($"你不可選擇自己的賭局", ephemeral: true);
-                            return;
-                        }
-
-                        string selectAffix = component.Data.Values.First();
-                        if (hSRBetData.SelectedRankDic.ContainsKey(component.User.Id))
-                        {
-                            hSRBetData.SelectedRankDic[component.User.Id] = selectAffix;
-                            await component.RespondAsync($"更改選擇: {_service.SubAffixList[selectAffix]}", ephemeral: true);
-                        }
-                        else
-                        {
-                            hSRBetData.SelectedRankDic.Add(component.User.Id, selectAffix);
-                            await component.RespondAsync($"選擇: {_service.SubAffixList[selectAffix]}", ephemeral: true);
-                        }
-
-                        await hSRBetData.SelectRankMessage.ModifyAsync((act) =>
-                            act.Embed = new EmbedBuilder()
-                                .WithColor(Color.Green)
-                                .WithTitle("詞條選擇清單")
-                                .WithDescription(string.Join('\n', hSRBetData.SelectedRankDic.Select((x) => $"<@{x.Key}>: {_service.SubAffixList[x.Value]}")))
-                                .Build()
-                            );
-                    }
-                    else
-                    {
-                        await component.RespondAsync($"該賭局已結束或取消", ephemeral: true);
-                        await DisableComponentAsync(component.Message);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, $"bet_: {component.User} - {component.Data.CustomId}. {component.Data.Value}");
-                }
-
-            }
-            else if (component.Data.CustomId == "betend")
-            {
-                if (component.User is SocketGuildUser user && component.Channel is SocketGuildChannel channel)
-                {
-                    var guild = channel.Guild;
-                    if (user.GetRoles().Any((x) => x.Permissions.Administrator) || guild.OwnerId == user.Id)
-                    {
-                        var jsonFile = component.Message.Attachments.FirstOrDefault((x) => x.Filename == "SPOILER_rank.json");
-                        if (jsonFile == null)
-                        {
-                            await component.RespondAsync("缺少 `SPOILER_rank.json` 檔案", ephemeral: true);
-                            await DisableComponentAsync(component.Message);
-                            return;
-                        }
-
-                        await component.DeferAsync(false);
-
-                        using var httpClient = _httpClientFactory.CreateClient();
-                        var jsonText = await httpClient.GetStringAsync(jsonFile.Url);
-                        var json = JsonSerializer.Deserialize<Dictionary<ulong, string>>(jsonText);
-
-                        string selectAffix = component.Data.Values.First();
-                        string result = "";
-                        foreach (var item in json)
-                        {
-                            var addResult = await _service.AddRebornTicketNumAsync(guild, item.Key, item.Value == selectAffix ? 3 : item.Value == "banker" ? 1 : -1);
-                            result += addResult.Item2;
-
-                            if (!addResult.Item1)
-                                break;
-                        }
-
-                        await component.FollowupAsync(embed: new EmbedBuilder().WithColor(Color.Green).WithDescription(result).Build());
-                        await DisableComponentAsync(component.Message);
-                    }
-                    else
-                    {
-                        await component.RespondAsync("你無權使用本功能", ephemeral: true);
+                        await component.RespondAsync($"你不可選擇自己的賭局", ephemeral: true);
                         return;
                     }
+
+                    string selectAffix = component.Data.Values.First();
+                    if (hSRBetData.SelectedRankDic.ContainsKey(component.User.Id))
+                    {
+                        hSRBetData.SelectedRankDic[component.User.Id] = selectAffix;
+                        await component.RespondAsync($"更改選擇: {_service.SubAffixList[selectAffix]}", ephemeral: true);
+                    }
+                    else
+                    {
+                        hSRBetData.SelectedRankDic.Add(component.User.Id, selectAffix);
+                        await component.RespondAsync($"選擇: {_service.SubAffixList[selectAffix]}", ephemeral: true);
+                    }
+
+                    await hSRBetData.SelectRankMessage.ModifyAsync((act) =>
+                        act.Embed = new EmbedBuilder()
+                            .WithColor(Color.Green)
+                            .WithTitle("詞條選擇清單")
+                            .WithDescription(string.Join('\n', hSRBetData.SelectedRankDic.Select((x) => $"<@{x.Key}>: {_service.SubAffixList[x.Value]}")))
+                            .Build()
+                        );
+                }
+                else
+                {
+                    await component.RespondAsync($"該賭局已結束或取消", ephemeral: true);
+                    await DisableComponentAsync(component.Message);
                 }
             }
-        };
+            catch (Exception ex)
+            {
+                Log.Error(ex, $"bet_: {component.User} - {component.Data.CustomId}. {component.Data.Value}");
+            }
+
+        }
+        else if (component.Data.CustomId == "betend")
+        {
+            if (component.User is SocketGuildUser user && component.Channel is SocketGuildChannel channel)
+            {
+                var guild = channel.Guild;
+                if (user.GetRoles().Any((x) => x.Permissions.Administrator) || guild.OwnerId == user.Id)
+                {
+                    var jsonFile = component.Message.Attachments.FirstOrDefault((x) => x.Filename == "SPOILER_rank.json");
+                    if (jsonFile == null)
+                    {
+                        await component.RespondAsync("缺少 `SPOILER_rank.json` 檔案", ephemeral: true);
+                        await DisableComponentAsync(component.Message);
+                        return;
+                    }
+
+                    await component.DeferAsync(false);
+
+                    using var httpClient = _httpClientFactory.CreateClient();
+                    var jsonText = await httpClient.GetStringAsync(jsonFile.Url);
+                    var json = JsonSerializer.Deserialize<Dictionary<ulong, string>>(jsonText);
+
+                    string selectAffix = component.Data.Values.First();
+                    string result = "";
+                    foreach (var item in json)
+                    {
+                        var addResult = await _service.AddRebornTicketNumAsync(guild, item.Key, item.Value == selectAffix ? 3 : item.Value == "banker" ? 1 : -1);
+                        result += addResult.Item2;
+
+                        if (!addResult.Item1)
+                            break;
+                    }
+
+                    await component.FollowupAsync(embed: new EmbedBuilder().WithColor(Color.Green).WithDescription(result).Build());
+                    await DisableComponentAsync(component.Message);
+                }
+                else
+                {
+                    await component.RespondAsync("你無權使用本功能", ephemeral: true);
+                    return;
+                }
+            }
+        }
     }
 
     public override ValueTask InitializeAsync()
     {
         using (var db = Database.DBContext.GetDbContext())
             db.Database.EnsureCreated();
+
+        _client.SelectMenuExecuted += _client_SelectMenuExecuted;
 
         Log.Information("MuteReborn Medusa Start");
 
@@ -141,6 +143,8 @@ public sealed partial class MuteReborn : Snek
 
     public override ValueTask DisposeAsync()
     {
+        _client.SelectMenuExecuted -= _client_SelectMenuExecuted;
+
         Log.Information("MuteReborn Medusa Disposed");
 
         return base.DisposeAsync();
