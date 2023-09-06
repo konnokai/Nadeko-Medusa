@@ -86,10 +86,9 @@ public sealed partial class MuteReborn : Snek
             }
             else if (component.Data.CustomId == "betend")
             {
-                if (component.User is SocketGuildUser)
+                if (component.User is SocketGuildUser user && component.Channel is SocketGuildChannel channel)
                 {
-                    var guild = ((SocketGuildChannel)component.Channel).Guild;
-                    var user = component.User as SocketGuildUser;
+                    var guild = channel.Guild;
                     if (user.GetRoles().Any((x) => x.Permissions.Administrator) || guild.OwnerId == user.Id)
                     {
                         var jsonFile = component.Message.Attachments.FirstOrDefault((x) => x.Filename == "rank.json");
@@ -110,7 +109,7 @@ public sealed partial class MuteReborn : Snek
                         string result = "";
                         foreach (var item in json)
                         {
-                            var addResult = await _service.AddRebornTicketNumAsync(guild, item.Key, item.Value == selectAffix || item.Value == "banker" ? 3 : -1);
+                            var addResult = await _service.AddRebornTicketNumAsync(guild, item.Key, item.Value == selectAffix ? 3 : item.Value == "banker" ? 1 : -1);
                             result += addResult.Item2;
 
                             if (!addResult.Item1)
