@@ -1,0 +1,12 @@
+attachremove:
+  desc: "附件移除紀錄"
+  args:
+    - ""
+reactionremove:
+  desc: "移除反應紀錄"
+  args:
+    - ""
+logignore:
+  desc: "忽略紀錄"
+  args:
+    - ""
