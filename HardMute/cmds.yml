@@ -1,0 +1,8 @@
+hardmute:
+  desc: "強制禁言"
+  args:
+    - "@某人"
+unhardmute:
+  desc: "取消強制禁言"
+  args:
+    - "@某人"
