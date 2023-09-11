@@ -54,16 +54,18 @@ public sealed partial class MuteReborn : Snek
                     }
 
                     string selectAffix = component.Data.Values.First();
-                    if (hSRBetData.SelectedRankDic.ContainsKey(component.User.Id))
+                    if (selectAffix == "cancel")
                     {
-                        hSRBetData.SelectedRankDic[component.User.Id] = selectAffix;
-                        await component.RespondAsync($"更改選擇: {_service.SubAffixList[selectAffix]}", ephemeral: true);
+                        if (hSRBetData.SelectedRankDic.TryRemove(component.User.Id, out string select))
+                            await component.RespondAsync("已取消選擇", ephemeral: true);
+                        else
+                            await component.RespondAsync("尚未選擇詞條", ephemeral: true);
                     }
                     else
                     {
-                        hSRBetData.SelectedRankDic.Add(component.User.Id, selectAffix);
+                        hSRBetData.SelectedRankDic.AddOrUpdate(component.User.Id, selectAffix, (_, _) => selectAffix);
                         await component.RespondAsync($"選擇: {_service.SubAffixList[selectAffix]}", ephemeral: true);
-                    }
+                    }                    
 
                     await hSRBetData.SelectRankMessage.ModifyAsync((act) =>
                         act.Embed = new EmbedBuilder()

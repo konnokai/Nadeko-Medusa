@@ -50,7 +50,7 @@ public partial class MuteReborn
                    .WithImageUrl(ctx.Message.Attachments.First().Url)
                    .WithFooter("請在合成結束後截圖詞條，上傳截圖同時輸入 `~hsrbe` 以供管理員檢查")
                    .Build(),
-               components: BuildAffixSelectMenu(betGuid));
+               components: BuildAffixSelectMenu(betGuid, true));
 
         var message2 = await message.ReplyAsync(
              embed: ctx.Embed()
@@ -99,7 +99,7 @@ public partial class MuteReborn
 
         var bytes = await httpClient.GetByteArrayAsync(ctx.Message.Attachments.First().Url);
         using var imageStream = new MemoryStream(bytes);
-        hSRBetData.SelectedRankDic.Add(hSRBetData.GamblingUser.Id, "banker");
+        hSRBetData.SelectedRankDic.TryAdd(hSRBetData.GamblingUser.Id, "banker");
         using var stringStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(hSRBetData.SelectedRankDic)));
 
         await ctx.Channel.SendFilesAsync(
@@ -130,13 +130,16 @@ public partial class MuteReborn
         });
     }
 
-    private MessageComponent BuildAffixSelectMenu(string customId = "dummy")
+    private MessageComponent BuildAffixSelectMenu(string customId = "dummy", bool canCancel = false)
     {
         var selectMenuOptionBuilders = new List<SelectMenuOptionBuilder>();
         foreach (var item in _service.SubAffixList)
         {
             selectMenuOptionBuilders.Add(new SelectMenuOptionBuilder(item.Value, item.Key));
         }
+
+        if (canCancel)
+            selectMenuOptionBuilders.Add(new SelectMenuOptionBuilder("取消選擇", "cancel"));
 
         return new ComponentBuilder()
             .WithSelectMenu(customId, selectMenuOptionBuilders, "請選擇詞條").Build();

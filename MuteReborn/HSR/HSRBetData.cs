@@ -1,4 +1,5 @@
 ﻿using Discord;
+using System.Collections.Concurrent;
 
 namespace MuteReborn.HSR
 {
@@ -9,7 +10,7 @@ namespace MuteReborn.HSR
         internal IUserMessage SelectRankMessage { get; set; }
         internal string AddMessage { get; set; }
         internal string BetGuid { get; set; } = "";
-        internal Dictionary<ulong, string> SelectedRankDic { get; set; } = new Dictionary<ulong, string>();
+        internal ConcurrentDictionary<ulong, string> SelectedRankDic { get; set; } = new();
 
         public HSRBetData(IUser user, IUserMessage gamblingMessage, IUserMessage selectRankMessage, string addMessage, string guid)
         {
