@@ -22,14 +22,14 @@ namespace LogExtension.Service
         private DiscordSocketClient _client;
         private IHttpClientFactory _httpFactory;
 
-        private readonly Timer autoDeleteAttachDir;
+        private readonly Timer _autoDeleteAttachDir;
         private ConcurrentBag<GuildLogConfigs> guildLogConfigs;
         private ConcurrentBag<Database.Models.LogIgnores> logIgnores;
 
         public LogExtensionService()
         {
             // 刪除14天的附件紀錄
-            autoDeleteAttachDir = new Timer((obj) =>
+            _autoDeleteAttachDir = new Timer((obj) =>
             {
                 try
                 {
@@ -159,7 +159,7 @@ namespace LogExtension.Service
                         }
                     }
                 }
-                catch (Exception ex) { Log.Error(ex, "_client_MessageDeleted"); }
+                catch (Exception ex) { Log.Error(ex, "LogExtensionService_Client_MessageDeleted"); }
             });
             return Task.CompletedTask;
         }
