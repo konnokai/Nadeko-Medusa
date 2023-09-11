@@ -7,7 +7,7 @@ namespace System.Collections.Generic;
 public sealed class ConcurrentHashSet<T> : IReadOnlyCollection<T>, ICollection<T> where T : notnull
 {
     private readonly ConcurrentDictionary<T, bool> _backingStore;
-    
+
     public ConcurrentHashSet()
         => _backingStore = new();
 
@@ -47,10 +47,10 @@ public sealed class ConcurrentHashSet<T> : IReadOnlyCollection<T>, ICollection<T
     public void CopyTo(T[] array, int arrayIndex)
     {
         ArgumentNullException.ThrowIfNull(array);
-        
+
         if (arrayIndex < 0)
             throw new ArgumentOutOfRangeException(nameof(arrayIndex));
-        
+
         if (arrayIndex >= array.Length)
             throw new ArgumentOutOfRangeException(nameof(arrayIndex));
 
@@ -64,7 +64,7 @@ public sealed class ConcurrentHashSet<T> : IReadOnlyCollection<T>, ICollection<T
         {
             if (arrayIndex >= len)
                 throw new IndexOutOfRangeException(nameof(arrayIndex));
-            
+
             array[arrayIndex++] = k;
         }
     }

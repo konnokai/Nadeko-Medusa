@@ -65,7 +65,7 @@ public sealed partial class MuteReborn : Snek
                     {
                         hSRBetData.SelectedRankDic.AddOrUpdate(component.User.Id, selectAffix, (_, _) => selectAffix);
                         await component.RespondAsync($"選擇: {_service.SubAffixList[selectAffix]}", ephemeral: true);
-                    }                    
+                    }
 
                     await hSRBetData.SelectRankMessage.ModifyAsync((act) =>
                         act.Embed = new EmbedBuilder()

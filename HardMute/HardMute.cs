@@ -8,7 +8,7 @@ using Serilog;
 
 namespace HardMute
 {
-    public class HardMute: Snek
+    public class HardMute : Snek
     {
         private readonly DiscordSocketClient _client;
         private readonly HardMuteService _service;
@@ -77,7 +77,7 @@ namespace HardMute
         public async Task UnHardMuteAsync(GuildContext ctx, IUser user)
         {
             try
-            {                
+            {
                 await _service.UnmuteUser(ctx.Guild.Id, user.Id).ConfigureAwait(false);
                 await ctx.SendConfirmAsync($"{Format.Bold(user.ToString())} 的 **強制禁止** __文字聊天__ 已被 **解除**。");
             }

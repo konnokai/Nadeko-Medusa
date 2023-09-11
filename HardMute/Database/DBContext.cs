@@ -1,5 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore;
-using HardMute.Database.Models;
+﻿using HardMute.Database.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace HardMute.Database
 {
