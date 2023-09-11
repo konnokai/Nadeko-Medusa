@@ -1,0 +1,4 @@
+remindinstantnoodles:
+  desc: "新增泡麵提醒"
+  args:
+    - "時間，預設三分鐘\n最小兩分鐘，最大十分鐘"
