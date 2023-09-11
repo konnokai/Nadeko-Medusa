@@ -46,7 +46,7 @@ namespace LogExtension
         }
 
         [cmd(new[] { "AttachRemove", "ar" })]
-        [user_perm(Discord.GuildPermission.Administrator)]
+        [bot_owner_only]
         public async Task AttachRemove(GuildContext ctx)
         {
             using (var db = Database.DBContext.GetDbContext())
@@ -79,7 +79,7 @@ namespace LogExtension
         }
 
         [cmd(new[] { "ReactionRemove", "rr" })]
-        [user_perm(Discord.GuildPermission.Administrator)]
+        [bot_owner_only]
         public async Task ReactionRemove(GuildContext ctx)
         {
             using (var db = Database.DBContext.GetDbContext())
