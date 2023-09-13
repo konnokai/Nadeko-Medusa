@@ -17,6 +17,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "LogExtension", "LogExtensio
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "RemindInstantNoodles", "RemindInstantNoodles\RemindInstantNoodles.csproj", "{B594FF42-4301-4B52-9AE2-74F87397E5EA}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "HSRUtility", "HSRUtility\HSRUtility.csproj", "{EEAD8D17-FC6D-4553-B417-E64C1BAEFCD7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -49,6 +51,10 @@ Global
 		{B594FF42-4301-4B52-9AE2-74F87397E5EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B594FF42-4301-4B52-9AE2-74F87397E5EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B594FF42-4301-4B52-9AE2-74F87397E5EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{EEAD8D17-FC6D-4553-B417-E64C1BAEFCD7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{EEAD8D17-FC6D-4553-B417-E64C1BAEFCD7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{EEAD8D17-FC6D-4553-B417-E64C1BAEFCD7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{EEAD8D17-FC6D-4553-B417-E64C1BAEFCD7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
