@@ -1,7 +1,7 @@
 ﻿using Discord;
+using MuteReborn.Bet.HSR;
 using MuteReborn.Database;
 using MuteReborn.Database.Models;
-using MuteReborn.HSR;
 using Nadeko.Snake;
 using Serilog;
 

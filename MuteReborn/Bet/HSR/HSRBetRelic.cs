@@ -1,7 +1,7 @@
 ﻿#nullable disable
 
 using Discord;
-using MuteReborn.HSR;
+using MuteReborn.Bet.HSR;
 using Nadeko.Snake;
 using NadekoBot;
 using NadekoBot.Extensions;

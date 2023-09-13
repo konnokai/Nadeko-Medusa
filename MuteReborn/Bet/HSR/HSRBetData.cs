@@ -1,7 +1,7 @@
 ﻿using Discord;
 using System.Collections.Concurrent;
 
-namespace MuteReborn.HSR
+namespace MuteReborn.Bet.HSR
 {
     internal class HSRBetData
     {
@@ -17,7 +17,7 @@ namespace MuteReborn.HSR
             GamblingUser = user;
             GamblingMessage = gamblingMessage;
             SelectRankMessage = selectRankMessage;
-            AddMessage = (string.IsNullOrEmpty(addMessage) ? "無" : addMessage);
+            AddMessage = string.IsNullOrEmpty(addMessage) ? "無" : addMessage;
             BetGuid = guid;
         }
     }
