@@ -5,7 +5,8 @@ namespace MuteReborn.Database
 {
     public class DBContext : DbContext
     {
-        public DbSet<GuildConfigs> GuildConfigs { get; set; }
+        public DbSet<BetGuildConfigs> BetGuildConfigs { get; set; }
+        public DbSet<MuteRebornGuildConfigs> MuteRebornGuildConfigs { get; set; }
         public DbSet<MuteRebornTicket> MuteRebornTickets { get; set; }
 
         protected override void OnConfiguring(DbContextOptionsBuilder options)

@@ -19,7 +19,8 @@ public class MuteRebornService
         { "critical", "爆率/爆傷" },
         { "status", "效果抗性/命中" },
         { "break_damage", "擊破特攻" },
-        { "speed", "速度" }
+        { "speed", "速度" },
+        { "banker", "莊家"}
     };
 
     public enum SettingType { BuyMuteRebornTicketCost, EachTicketIncreaseMuteTime, EachTicketDecreaseMuteTime, MaxIncreaseMuteTime, GetAllSetting }
@@ -30,13 +31,13 @@ public class MuteRebornService
         try
         {
             using var db = DBContext.GetDbContext();
-            var guildConfig = db.GuildConfigs.SingleOrDefault((x) => x.GuildId == guild.Id);
+            var guildConfig = db.MuteRebornGuildConfigs.SingleOrDefault((x) => x.GuildId == guild.Id);
 
             if (guildConfig == null)
-                guildConfig = new GuildConfigs() { GuildId = guild.Id };
+                guildConfig = new MuteRebornGuildConfigs() { GuildId = guild.Id };
 
             guildConfig.EnableMuteReborn = !guildConfig.EnableMuteReborn;
-            db.GuildConfigs.Update(guildConfig);
+            db.MuteRebornGuildConfigs.Update(guildConfig);
             db.SaveChanges();
 
             return guildConfig.EnableMuteReborn;
@@ -53,7 +54,7 @@ public class MuteRebornService
         try
         {
             using var db = DBContext.GetDbContext();
-            var guildConfig = db.GuildConfigs.SingleOrDefault((x) => x.GuildId == guild.Id);
+            var guildConfig = db.MuteRebornGuildConfigs.SingleOrDefault((x) => x.GuildId == guild.Id);
 
             if (guildConfig == null)
                 return false;
@@ -73,7 +74,7 @@ public class MuteRebornService
         {
             using var db = DBContext.GetDbContext();
 
-            var guildConfig = db.GuildConfigs.SingleOrDefault((x) => x.GuildId == guild.Id) ?? throw new NullReferenceException();
+            var guildConfig = db.MuteRebornGuildConfigs.SingleOrDefault((x) => x.GuildId == guild.Id) ?? throw new NullReferenceException();
 
             switch (type)
             {
@@ -101,7 +102,7 @@ public class MuteRebornService
         try
         {
             using var db = DBContext.GetDbContext();
-            var guildConfig = db.GuildConfigs.SingleOrDefault((x) => x.GuildId == guild.Id);
+            var guildConfig = db.MuteRebornGuildConfigs.SingleOrDefault((x) => x.GuildId == guild.Id);
 
             if (guildConfig == null)
                 return 0;
@@ -122,7 +123,7 @@ public class MuteRebornService
     public bool CanReborn(IGuild guild, IUser user)
     {
         using var db = DBContext.GetDbContext();
-        var guildConfig = db.GuildConfigs.SingleOrDefault((x) => x.GuildId == guild.Id);
+        var guildConfig = db.MuteRebornGuildConfigs.SingleOrDefault((x) => x.GuildId == guild.Id);
         if (guildConfig == null)
             return false;
         if (!guildConfig.EnableMuteReborn)
@@ -148,7 +149,7 @@ public class MuteRebornService
             int addNum = num;
 
             using var db = DBContext.GetDbContext();
-            var guildConfig = db.GuildConfigs.SingleOrDefault((x) => x.GuildId == guild.Id);
+            var guildConfig = db.MuteRebornGuildConfigs.SingleOrDefault((x) => x.GuildId == guild.Id);
 
             if (guildConfig == null)
                 return (false, "伺服器不在資料庫內");
@@ -184,7 +185,7 @@ public class MuteRebornService
         try
         {
             using var db = DBContext.GetDbContext();
-            var guildConfig = db.GuildConfigs.SingleOrDefault((x) => x.GuildId == guild.Id);
+            var guildConfig = db.MuteRebornGuildConfigs.SingleOrDefault((x) => x.GuildId == guild.Id);
 
             if (guildConfig == null)
                 return "伺服器不在資料庫內";

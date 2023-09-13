@@ -40,9 +40,15 @@ public partial class MuteReborn
         if (isCancel)
             return;
 
+        string betMessage = "開賭啦";
         string betGuid = "bet_" + Guid.NewGuid().ToString().Replace("-", "");
 
-        var message = await ctx.Channel.SendMessageAsync("開賭啦",
+        using var db = Database.DBContext.GetDbContext();
+        var betGuildConfigs = db.BetGuildConfigs.FirstOrDefault((x) => x.GuildId == ctx.Guild.Id);
+        if (betGuildConfigs != null && !string.IsNullOrEmpty(betGuildConfigs.HSRBetStartMessage))
+            betMessage = betGuildConfigs.HSRBetStartMessage;
+
+        var message = await ctx.Channel.SendMessageAsync(betMessage,
                embed: ctx.Embed()
                    .WithColor(EmbedColor.Ok)
                    .WithTitle(ctx.User.ToString())
@@ -102,14 +108,23 @@ public partial class MuteReborn
         hSRBetData.SelectedRankDic.TryAdd(hSRBetData.GamblingUser.Id, "banker");
         using var stringStream = new MemoryStream(System.Text.Encoding.UTF8.GetBytes(JsonSerializer.Serialize(hSRBetData.SelectedRankDic)));
 
-        await ctx.Channel.SendFilesAsync(
+        ITextChannel channel = null;
+
+        using var db = Database.DBContext.GetDbContext();
+        var betGuildConfigs = db.BetGuildConfigs.FirstOrDefault((x) => x.GuildId == ctx.Guild.Id);
+        if (betGuildConfigs != null && betGuildConfigs.BetRecordChannelId != 0)
+            channel = await ctx.Guild.GetChannelAsync(betGuildConfigs.BetRecordChannelId) as ITextChannel;
+
+        channel ??= ctx.Channel;
+
+        await channel.SendFilesAsync(
             attachments: new List<FileAttachment>() { new FileAttachment(imageStream, "rank.jpg"), new FileAttachment(stringStream, "rank.json", isSpoiler: true) },
             embed: ctx.Embed()
                 .WithColor(EmbedColor.Ok)
                 .WithTitle(hSRBetData.GamblingUser.ToString() + " 的詞條賭局選擇清單")
                 .WithDescription($"附加訊息: {hSRBetData.AddMessage}\n\n" +
                     $"詞條選擇清單:\n" +
-                    $"{string.Join('\n', hSRBetData.SelectedRankDic.Take(hSRBetData.SelectedRankDic.Count - 1).Select((x) => $"<@{x.Key}>: {_service.SubAffixList[x.Value]}"))}\n\n" +
+                    $"{string.Join('\n', hSRBetData.SelectedRankDic.Select((x) => $"<@{x.Key}>: {_service.SubAffixList[x.Value]}"))}\n\n" +
                     Format.Url($"賭局連結", hSRBetData.GamblingMessage.GetJumpUrl()))
                 .WithImageUrl("attachment://rank.jpg")
                 .Build(),
@@ -135,6 +150,9 @@ public partial class MuteReborn
         var selectMenuOptionBuilders = new List<SelectMenuOptionBuilder>();
         foreach (var item in _service.SubAffixList)
         {
+            if (item.Key == "banker")
+                continue;
+
             selectMenuOptionBuilders.Add(new SelectMenuOptionBuilder(item.Value, item.Key));
         }
 

@@ -38,3 +38,13 @@ hsrendbetrelic:
   desc: "結束賭局"
   args:
     - ""
+setrecordchannel:
+  desc: "設定賭局結束的紀錄頻道"
+  args:
+    - "#頻道"
+sethsrbetstartmessage:
+  desc: "設定詞條賭局開始時的訊息"
+  args:
+    - "訊息"
+    - "@賭徒 開賭啦"
+    

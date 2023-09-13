@@ -1,6 +1,6 @@
 ﻿namespace MuteReborn.Database.Models
 {
-    public class GuildConfigs : DbEntity
+    public class MuteRebornGuildConfigs : DbEntity
     {
         public ulong GuildId { get; set; }
         public bool EnableMuteReborn { get; set; } = false;

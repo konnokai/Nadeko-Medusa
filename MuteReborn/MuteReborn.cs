@@ -165,7 +165,7 @@ public sealed partial class MuteReborn : Snek
     public async Task SettingMuteReborn(GuildContext ctx, MuteRebornService.SettingType type = MuteRebornService.SettingType.GetAllSetting, int value = 0)
     {
         using var db = Database.DBContext.GetDbContext();
-        var guild = db.GuildConfigs.SingleOrDefault((x) => x.GuildId == ctx.Guild.Id);
+        var guild = db.MuteRebornGuildConfigs.SingleOrDefault((x) => x.GuildId == ctx.Guild.Id);
 
         if (guild == null)
         {
@@ -346,7 +346,7 @@ public sealed partial class MuteReborn : Snek
 
         using var db = Database.DBContext.GetDbContext();
 
-        var guildConfig = db.GuildConfigs.SingleOrDefault((x) => x.GuildId == ctx.Guild.Id);
+        var guildConfig = db.MuteRebornGuildConfigs.SingleOrDefault((x) => x.GuildId == ctx.Guild.Id);
         if (guildConfig == null)
         {
             await ctx.SendErrorAsync("尚未設定死者蘇生");
