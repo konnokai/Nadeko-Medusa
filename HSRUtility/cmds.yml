@@ -1,8 +1,0 @@
-linkuserid:
-  desc: "綁定你的Discord及遊戲UID"
-  args:
-    - "800000000"
-GetUserDetail:
-  desc: "取得詳細資料"
-  args:
-    - "UID，留空則使用綁定的UID"
