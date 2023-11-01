@@ -131,15 +131,17 @@ namespace MuteReborn
             {
                 msg = await ctx.Channel.GetMessageAsync(msg.Id).ConfigureAwait(false) as IUserMessage;
 
-                foreach (var item in msg.Reactions)
+                foreach (var reacton in msg.Reactions)
                 {
-                    var list = await msg.GetReactionUsersAsync(item.Key, 30).FlattenAsync().ConfigureAwait(false);
-                    foreach (var item2 in list)
+                    await foreach (var reactoinUsers in msg.GetReactionUsersAsync(reacton.Key, 30))
                     {
-                        if (dic.ContainsKey(item.Key))
-                            dic[item.Key].Add(item2.Id);
-                        else
-                            dic.Add(item.Key, new List<ulong>() { item2.Id });
+                        foreach (var user in reactoinUsers)
+                        {
+                            if (dic.ContainsKey(reacton.Key))
+                                dic[reacton.Key].Add(user.Id);
+                            else
+                                dic.Add(reacton.Key, new List<ulong>() { user.Id });
+                        }
                     }
                 }
 
