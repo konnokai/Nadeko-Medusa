@@ -154,7 +154,7 @@ namespace LogExtension.Service
                             if (item.Url.TryGetAttachmentFilePath(out string path) && File.Exists($"attach_log/{msg.CreatedAt:yyyyMMdd}/{path}"))
                             {
                                 await logChannel.SendFileAsync($"attach_log/{msg.CreatedAt:yyyyMMdd}/{path}");
-                                File.Delete($"attach_log/{msg.CreatedAt:yyyyMMdd}{path}");
+                                File.Delete($"attach_log/{msg.CreatedAt:yyyyMMdd}/{path}");
                             }
                         }
                     }
