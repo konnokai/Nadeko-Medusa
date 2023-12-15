@@ -263,6 +263,7 @@ namespace LogExtension.Service
 
         public static bool TryGetAttachmentFilePath(this string input, out string path)
         {
+            input = input.Split('?')[0];
             var match = AttchUrlRegex.Match(input);
             if (match.Success)
             {
