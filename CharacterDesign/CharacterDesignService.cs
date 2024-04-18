@@ -9,7 +9,7 @@ using Serilog;
 namespace CharacterDesign.Service
 {
     [svc(Lifetime.Singleton)]
-    public class CharacterDesignService : Snek
+    public class CharacterDesignService
     {
         private DiscordSocketClient _client;
         private ImagesConfig _ic;
