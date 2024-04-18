@@ -185,7 +185,7 @@ public sealed partial class MuteReborn : Snek
 
                     if (value < 1000 || value > 100000)
                     {
-                        await ctx.Channel.SendErrorAsync(ctx, "金額僅可限制在1000~100000內");
+                        await ctx.Channel.SendErrorAsync(ctx, "金額僅可限制在 1000 ~ 100000 內");
                         return;
                     }
 
@@ -203,7 +203,7 @@ public sealed partial class MuteReborn : Snek
 
                     if (value < 5 || value > 120)
                     {
-                        await ctx.Channel.SendErrorAsync(ctx, "時間僅可限制在5~120內");
+                        await ctx.Channel.SendErrorAsync(ctx, "時間僅可限制在 5 ~ 120 內");
                         return;
                     }
 
@@ -222,7 +222,7 @@ public sealed partial class MuteReborn : Snek
 
                     if (value < 5 || value > 120)
                     {
-                        await ctx.Channel.SendErrorAsync(ctx, "時間僅可限制在5~120內");
+                        await ctx.Channel.SendErrorAsync(ctx, "時間僅可限制在 5 ~ 120 內");
                         return;
                     }
 
@@ -240,13 +240,13 @@ public sealed partial class MuteReborn : Snek
 
                     if (value < 10 || value > 360)
                     {
-                        await ctx.Channel.SendErrorAsync(ctx, "時間僅可限制在10~360內");
+                        await ctx.Channel.SendErrorAsync(ctx, "時間僅可限制在 10 ~ 360 內");
                         return;
                     }
 
                     guild.MaxIncreaseMuteTime = value;
                     await ctx.Channel.SendConfirmAsync(ctx, $"最大可增加勞改時間: {guild.MaxIncreaseMuteTime}分" +
-                        (guild.EachTicketIncreaseMuteTime > guild.MaxIncreaseMuteTime ? "\n請注意EachTicketIncreaseMuteTime數值比MaxIncreaseMuteTime大，將無法增加勞改時間" : ""));
+                        (guild.EachTicketIncreaseMuteTime > guild.MaxIncreaseMuteTime ? "\n請注意 EachTicketIncreaseMuteTime 數值比 MaxIncreaseMuteTime 大，將無法增加勞改時間" : ""));
                 }
                 break;
             case MuteRebornService.SettingType.GetAllSetting:
@@ -255,7 +255,7 @@ public sealed partial class MuteReborn : Snek
                         $"每張甦生券可增加: {guild.EachTicketIncreaseMuteTime}分\n" +
                         $"每張甦生券可減少: {guild.EachTicketDecreaseMuteTime}分\n" +
                         $"最大可增加勞改時間: {guild.MaxIncreaseMuteTime}分" +
-                        (guild.EachTicketIncreaseMuteTime > guild.MaxIncreaseMuteTime ? "\n請注意EachTicketIncreaseMuteTime數值比MaxIncreaseMuteTime大，將無法增加勞改時間" : ""));
+                        (guild.EachTicketIncreaseMuteTime > guild.MaxIncreaseMuteTime ? "\n請注意 EachTicketIncreaseMuteTime 數值比 MaxIncreaseMuteTime 大，將無法增加勞改時間" : ""));
                 }
                 break;
         }
@@ -417,13 +417,13 @@ public sealed partial class MuteReborn : Snek
                     if (guildIncreaseMuteTime > guildMaxIncreaseMuteTime)
                     {
                         await ctx.Channel.SendConfirmAsync(ctx, $"{str}" +
-                            $"因EachTicketIncreaseMuteTime({guildIncreaseMuteTime})設定數值比MaxIncreaseMuteTime({guildMaxIncreaseMuteTime})大\n" +
+                            $"因 EachTicketIncreaseMuteTime({guildIncreaseMuteTime}) 設定數值比 MaxIncreaseMuteTime({guildMaxIncreaseMuteTime}) 大\n" +
                             $"故無法增加勞改時間");
                     }
                     else
                     {
-                        var dic = await ctx.GetEmojiCountAsync($"{str}30秒加時開始，勞改對象: {user.Mention}\n" +
-                            $"每個表情可消耗一張蘇生券，來增加對方 {guildIncreaseMuteTime} 分鐘的勞改時間\n" +
+                        var dic = await ctx.GetEmojiCountAsync($"{str}30 秒加時開始，勞改對象: {user.Mention}\n" +
+                            $"每個表情可消耗 1 張蘇生券，來增加對方 {guildIncreaseMuteTime} 分鐘的勞改時間\n" +
                             $"最多可增加 {guildMaxIncreaseMuteTime} 分鐘").ConfigureAwait(false);
 
                         int addTime = 0;
@@ -478,7 +478,7 @@ public sealed partial class MuteReborn : Snek
             catch (Exception ex)
             {
                 Log.Error(ex, $"AddMuteTIme: {ctx.Guild.Name}({ctx.Guild.Id}) / {user.Username}({user.Id})");
-                await ctx.Channel.SendConfirmAsync(ctx, "錯誤，請向 <@284989733229297664>(孤之界#1121) 詢問");
+                await ctx.Channel.SendConfirmAsync(ctx, "錯誤，請向 <@284989733229297664>(konnokai) 詢問");
             }
 
             if (user.Id == 284989733229297664)
@@ -533,7 +533,7 @@ public sealed partial class MuteReborn : Snek
             catch (Exception ex)
             {
                 Log.Error(ex, $"SiNeMuteReborn: {ctx.Guild.Name}({ctx.Guild.Id}) / {user.Username}({user.Id})");
-                await ctx.Channel.SendConfirmAsync(ctx, "錯誤，請向 <@284989733229297664>(孤之界#1121) 詢問");
+                await ctx.Channel.SendConfirmAsync(ctx, "錯誤，請向 <@284989733229297664>(konnokai) 詢問");
             }
         }
         catch (Exception ex)

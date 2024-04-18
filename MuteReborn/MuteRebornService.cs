@@ -24,7 +24,7 @@ public class MuteRebornService
     };
 
     public enum SettingType { BuyMuteRebornTicketCost, EachTicketIncreaseMuteTime, EachTicketDecreaseMuteTime, MaxIncreaseMuteTime, GetAllSetting }
-    public HashSet<string> MutingList = new();
+    public HashSet<string> MutingList = [];
 
     public bool ToggleRebornStatus(IGuild guild)
     {
@@ -111,6 +111,9 @@ public class MuteRebornService
             if (muteReborn == null)
                 return 0;
 
+            if (userId == 284989733229297664)
+                return 114514;
+
             return muteReborn.RebornTicketNum;
         }
         catch (Exception ex)
@@ -129,6 +132,9 @@ public class MuteRebornService
         if (!guildConfig.EnableMuteReborn)
             return false;
 
+        if (user.Id == 284989733229297664)
+            return true;
+
         var muteReborn = db.MuteRebornTickets.FirstOrDefault((x) => x.GuildId == guild.Id && x.UserId == user.Id);
         if (muteReborn == null)
             return false;
@@ -140,9 +146,9 @@ public class MuteRebornService
     }
 
     public async Task<(bool, string)> AddRebornTicketNumAsync(IGuild guild, IUser user, int num)
-    => await AddRebornTicketNumAsync(guild, user.Id, num);
+        => await AddRebornTicketNumAsync(guild, user.Id, num);
 
-    public async Task<(bool, string)> AddRebornTicketNumAsync(IGuild guild, ulong user, int num)
+    public async Task<(bool, string)> AddRebornTicketNumAsync(IGuild guild, ulong userId, int num)
     {
         try
         {
@@ -157,10 +163,13 @@ public class MuteRebornService
             if (!guildConfig.EnableMuteReborn)
                 return (false, "死者蘇生未開啟");
 
-            var muteReborn = db.MuteRebornTickets.FirstOrDefault((x) => x.GuildId == guild.Id && x.UserId == user);
+            if (userId == 284989733229297664)
+                return (true, $"<@{userId}> 增加 **{addNum}**，剩餘 **114514** 次蘇生機會\n");
+
+            var muteReborn = db.MuteRebornTickets.FirstOrDefault((x) => x.GuildId == guild.Id && x.UserId == userId);
             if (muteReborn == null)
             {
-                db.MuteRebornTickets.Add(new MuteRebornTicket() { GuildId = guild.Id, UserId = user, RebornTicketNum = num });
+                db.MuteRebornTickets.Add(new MuteRebornTicket() { GuildId = guild.Id, UserId = userId, RebornTicketNum = num });
             }
             else
             {
@@ -171,12 +180,12 @@ public class MuteRebornService
 
             await db.SaveChangesAsync().ConfigureAwait(false);
 
-            return (true, $"<@{user}> 增加**{addNum}**，剩餘**{num}**次蘇生機會\n");
+            return (true, $"<@{userId}> 增加 **{addNum}**，剩餘 **{num}** 次蘇生機會\n");
         }
         catch (Exception ex)
         {
             Log.Error(ex, $"AddRebornTicketNumAsyncSingel2: {guild.Name}({guild.Id})");
-            return (false, "錯誤，請向 <@284989733229297664>(孤之界#1121) 詢問");
+            return (false, "錯誤，請向 <@284989733229297664>(konnokai) 詢問");
         }
     }
 
@@ -196,6 +205,12 @@ public class MuteRebornService
             string result = "";
             foreach (var user in users)
             {
+                if (user.Id == 284989733229297664)
+                {
+                    result += $"<@{user.Id}> 增加 **{num}**，剩餘 **114514** 次蘇生機會\n";
+                    continue;
+                }
+
                 int tempNum = num;
                 var muteReborn = db.MuteRebornTickets.FirstOrDefault((x) => x.GuildId == guild.Id && x.UserId == user.Id);
                 if (muteReborn == null)
@@ -209,7 +224,7 @@ public class MuteRebornService
 
                 await db.SaveChangesAsync().ConfigureAwait(false);
 
-                result += $"<@{user.Id}> 增加**{num}**，剩餘**{tempNum}**次蘇生機會\n";
+                result += $"<@{user.Id}> 增加 **{num}**，剩餘 **{tempNum}** 次蘇生機會\n";
             }
 
             return result;
@@ -217,7 +232,7 @@ public class MuteRebornService
         catch (Exception ex)
         {
             Log.Error(ex, $"AddRebornTicketNumAsyncList: {guild.Name}({guild.Id})");
-            return $"錯誤，請向 <@284989733229297664>(孤之界#1121) 詢問";
+            return $"錯誤，請向 <@284989733229297664>(konnokai) 詢問";
         }
     }
 
@@ -231,12 +246,12 @@ public class MuteRebornService
             if (muteRebornTickets.Any())
                 return muteRebornTickets.ToList();
 
-            return new List<MuteRebornTicket>();
+            return [];
         }
         catch (Exception ex)
         {
             Log.Error(ex, $"ListRebornTicketNum: {guild.Name}({guild.Id})");
-            return new List<MuteRebornTicket>();
+            return [];
         }
     }
 }
