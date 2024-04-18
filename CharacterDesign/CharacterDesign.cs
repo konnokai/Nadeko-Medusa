@@ -34,7 +34,7 @@ namespace CharacterDesign
             return base.DisposeAsync();
         }
 
-        [cmd(new[] { "AddCharDesign", "acd" })]
+        [cmd(["AddCharDesign", "acd"])]
         [bot_owner_only]
         public async Task AddCharDesign(AnyContext ctx, string designName = "", string charAvatar = "", [leftover] string playingList = "")
         {
@@ -58,7 +58,7 @@ namespace CharacterDesign
                 await ctx.SendErrorAsync("人設已存在");
         }
 
-        [cmd(new[] { "AddCharDesignPlayingStatus", "acdps" })]
+        [cmd(["AddCharDesignPlayingStatus", "acdps"])]
         [bot_owner_only]
         public async Task AddCharDesignPlayingStatus(AnyContext ctx, string designName = "", [leftover] string playingList = "")
         {
@@ -81,7 +81,7 @@ namespace CharacterDesign
                 await ctx.SendErrorAsync("人設狀態新增失敗");
         }
 
-        [cmd(new[] { "ChangeCharDesign", "ccd" })]
+        [cmd(["ChangeCharDesign", "ccd"])]
         [bot_owner_only]
         public async Task ChangeCharDesign(AnyContext ctx, [leftover] string designName = "")
         {
@@ -94,7 +94,7 @@ namespace CharacterDesign
                 await ctx.SendErrorAsync("人設切換失敗");
         }
 
-        [cmd(new[] { "ListCharDesign", "lcd" })]
+        [cmd(["ListCharDesign", "lcd"])]
         [bot_owner_only]
         public async Task ListCharDesign(AnyContext ctx)
         {
@@ -111,7 +111,7 @@ namespace CharacterDesign
                 }, list.Count(), 10);
         }
 
-        [cmd(new[] { "SaveCharDesign", "scd" })]
+        [cmd(["SaveCharDesign", "scd"])]
         [bot_owner_only]
         public async Task SaveCharDesign(AnyContext ctx, [leftover] string designName = "")
         {
@@ -135,7 +135,7 @@ namespace CharacterDesign
                 await ctx.SendErrorAsync("人設保存失敗");
         }
 
-        [cmd(new[] { "DeleteCharDesign", "dcd" })]
+        [cmd(["DeleteCharDesign", "dcd"])]
         [bot_owner_only]
         public async Task DeleteCharDesign(AnyContext ctx, [leftover] string designName = "")
         {

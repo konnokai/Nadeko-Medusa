@@ -7,7 +7,7 @@ namespace MuteReborn;
 
 public partial class MuteReborn
 {
-    [cmd(new[] { "SetRecordChannel", "src" })]
+    [cmd(["SetRecordChannel", "src"])]
     [user_perm(GuildPermission.Administrator)]
     public async Task SetRecordChannel(GuildContext ctx, ITextChannel channel = null)
     {
@@ -69,7 +69,7 @@ public partial class MuteReborn
         await ctx.SendConfirmAsync($"已將賭博紀錄頻道設定至 `{channel}`");
     }
 
-    [cmd(new[] { "SetHSRBetStartMessage", "shbsm" })]
+    [cmd(["SetHSRBetStartMessage", "shbsm"])]
     [user_perm(GuildPermission.Administrator)]
     public async Task SetHSRBetStartMessage(GuildContext ctx, [leftover] string message = null)
     {

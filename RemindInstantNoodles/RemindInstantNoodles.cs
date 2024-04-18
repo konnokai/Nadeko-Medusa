@@ -13,7 +13,7 @@ namespace RemindInstantNoodles
             _remindService = remindService;
         }
 
-        [cmd(new[] { "RemindInstantNoodles", "泡麵" })]
+        [cmd(["RemindInstantNoodles", "泡麵"])]
         public async Task RemindInstantNoodles(AnyContext ctx, int minutes = 3)
         {
             minutes = Math.Max(2, Math.Min(10, minutes));

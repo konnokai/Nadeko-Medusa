@@ -40,7 +40,7 @@ namespace HardMute
             return base.DisposeAsync();
         }
 
-        [cmd(new[] { "HardMute" })]
+        [cmd(["HardMute"])]
         [bot_owner_only]
         public async Task HardMuteAsync(GuildContext ctx, StoopidTime time, [leftover] string user)
         {
@@ -48,7 +48,7 @@ namespace HardMute
                 return;
 
             user = user.Replace("<", "").Replace("@", "").Replace("!", "").Replace(">", "");
-            var list = user.Trim().Split(new char[] { ' ' });
+            var list = user.Trim().Split([' ']);
 
             foreach (var item in list)
             {
@@ -72,7 +72,7 @@ namespace HardMute
             }
         }
 
-        [cmd(new[] { "UnHardMute" })]
+        [cmd(["UnHardMute"])]
         [bot_owner_only]
         public async Task UnHardMuteAsync(GuildContext ctx, IUser user)
         {

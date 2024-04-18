@@ -152,7 +152,7 @@ public sealed partial class MuteReborn : Snek
         return base.DisposeAsync();
     }
 
-    [cmd(new[] { "ToggleMuteReborn", "tmb" })]
+    [cmd(["ToggleMuteReborn", "tmb"])]
     [user_perm(GuildPermission.Administrator)]
     public async Task ToggleMuteReborn(GuildContext ctx)
     {
@@ -160,7 +160,7 @@ public sealed partial class MuteReborn : Snek
         await ctx.Channel.SendConfirmAsync(ctx, "死者蘇生已" + (result ? "開啟" : "關閉")).ConfigureAwait(false);
     }
 
-    [cmd(new[] { "SettingMuteReborn", "smb" })]
+    [cmd(["SettingMuteReborn", "smb"])]
     [user_perm(GuildPermission.Administrator)]
     public async Task SettingMuteReborn(GuildContext ctx, MuteRebornService.SettingType type = MuteRebornService.SettingType.GetAllSetting, int value = 0)
     {
@@ -264,7 +264,7 @@ public sealed partial class MuteReborn : Snek
     }
 
 
-    [cmd(new[] { "AddMuteRebornTicketNum", "amrtn" })]
+    [cmd(["AddMuteRebornTicketNum", "amrtn"])]
     [user_perm(GuildPermission.Administrator)]
     [prio(0)]
     public async Task AddMuteRebornTicketNum(GuildContext ctx, int num, IGuildUser user)
@@ -273,7 +273,7 @@ public sealed partial class MuteReborn : Snek
         await ctx.Channel.SendConfirmAsync(ctx, result.Item2).ConfigureAwait(false);
     }
 
-    [cmd(new[] { "AddMuteRebornTicketNum", "amrtn" })]
+    [cmd(["AddMuteRebornTicketNum", "amrtn"])]
     [user_perm(GuildPermission.Administrator)]
     [prio(1)]
     public async Task AddMuteRebornTicketNum(GuildContext ctx, int num, [leftover] string users)
@@ -293,7 +293,7 @@ public sealed partial class MuteReborn : Snek
         await ctx.Channel.SendConfirmAsync(ctx, result).ConfigureAwait(false);
     }
 
-    [cmd(new[] { "ListMuteRebornTicketNum", "lmrtn" })]
+    [cmd(["ListMuteRebornTicketNum", "lmrtn"])]
     public async Task ListMuteRebornTicketNum(GuildContext ctx, int page = 0)
     {
         var resultReborn = _service.ListRebornTicketNum(ctx.Guild);
@@ -308,11 +308,11 @@ public sealed partial class MuteReborn : Snek
              string.Join('\n', result.Skip(page * 15).Take(15)));
     }
 
-    [cmd(new[] { "ShowMuteRebornTicketNum", "smrtn" })]
+    [cmd(["ShowMuteRebornTicketNum", "smrtn"])]
     public async Task ShowMuteRebornTicketNum(GuildContext ctx, IUser? user = null)
         => await ShowMuteRebornTicketNum(ctx, user == null ? ctx.User.Id : user.Id);
 
-    [cmd(new[] { "ShowMuteRebornTicketNum", "smrtn" })]
+    [cmd(["ShowMuteRebornTicketNum", "smrtn"])]
     public async Task ShowMuteRebornTicketNum(GuildContext ctx, ulong userId = 0)
     {
         if (userId == 0)
@@ -335,7 +335,7 @@ public sealed partial class MuteReborn : Snek
         await ctx.Channel.SendConfirmAsync(ctx, $"<@{userId}> 的次數為: {muteReborn.RebornTicketNum}").ConfigureAwait(false);
     }
 
-    [cmd(new[] { "BuyMuteRebornTicket", "bmrt" })]
+    [cmd(["BuyMuteRebornTicket", "bmrt"])]
     public async Task BuyMuteRebornTicket(GuildContext ctx, int num = 1)
     {
         if (num <= 0)

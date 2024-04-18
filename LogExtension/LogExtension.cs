@@ -45,7 +45,7 @@ namespace LogExtension
             return base.DisposeAsync();
         }
 
-        [cmd(new[] { "AttachRemove", "ar" })]
+        [cmd(["AttachRemove", "ar"])]
         [bot_owner_only]
         public async Task AttachRemove(GuildContext ctx)
         {
@@ -78,7 +78,7 @@ namespace LogExtension
             }
         }
 
-        [cmd(new[] { "ReactionRemove", "rr" })]
+        [cmd(["ReactionRemove", "rr"])]
         [bot_owner_only]
         public async Task ReactionRemove(GuildContext ctx)
         {
@@ -111,7 +111,7 @@ namespace LogExtension
             }
         }
 
-        [cmd(new[] { "LogIgnore", "ignore" })]
+        [cmd(["LogIgnore", "ignore"])]
         [user_perm(Discord.GuildPermission.Administrator)]
         public async Task LogIgnore(GuildContext ctx)
         {

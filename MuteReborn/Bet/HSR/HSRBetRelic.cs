@@ -10,7 +10,7 @@ using System.Text.Json;
 namespace MuteReborn;
 public partial class MuteReborn
 {
-    [cmd(new[] { "HSRStartBetRelic", "hsrbs" })]
+    [cmd(["HSRStartBetRelic", "hsrbs"])]
     public async Task HSRStartBetRelic(GuildContext ctx, [leftover] string text = "")
     {
         if (!ctx.Message.Attachments.Any())
@@ -68,7 +68,7 @@ public partial class MuteReborn
         _service.RunningHSRBetList.Add(new HSRBetData(ctx.User, message, message2, text, betGuid));
     }
 
-    [cmd(new[] { "HSREndBetRelic", "hsrbe" })]
+    [cmd(["HSREndBetRelic", "hsrbe"])]
     public async Task HSREndBetRelic(GuildContext ctx)
     {
         var hSRBetData = _service.RunningHSRBetList.FirstOrDefault((x) => x.GamblingUser.Id == ctx.User.Id);

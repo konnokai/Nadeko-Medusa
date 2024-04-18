@@ -35,7 +35,7 @@ namespace RestBan
         }
 
 
-        [cmd(new[] { "RestBan" })]
+        [cmd(["RestBan"])]
         [bot_owner_only]
         public async Task RestBanAsync(AnyContext ctx, ulong userId = 0)
         {

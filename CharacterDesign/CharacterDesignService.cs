@@ -66,10 +66,10 @@ namespace CharacterDesign.Service
             }
 
             var @char = new CharacterDesign();
-            var list = playingList.Split(new char[] { '|' });
+            var list = playingList.Split(['|']);
             foreach (string item in list)
             {
-                var temp = item.Split(new char[] { ':' });
+                var temp = item.Split([':']);
                 if (Enum.TryParse(typeof(ActivityType), temp[0], true, out object type))
                     @char.PlayingList.Add(new RotatingPlayingStatus() { Type = (ActivityType)type, Status = temp[1] });
             }
@@ -92,10 +92,10 @@ namespace CharacterDesign.Service
 
             CharacterDesign? @char = JsonConvert.DeserializeObject<CharacterDesign>(File.ReadAllText(designName.ToDesignPath() + "design.json"));
 
-            var list = playingList.Split(new char[] { '|' });
+            var list = playingList.Split(['|']);
             foreach (string item in list)
             {
-                var playingStatus = item.Split(new char[] { ':' });
+                var playingStatus = item.Split([':']);
                 if (Enum.TryParse(typeof(ActivityType), playingStatus[0], true, out object? type))
                     @char.PlayingList.Add(new RotatingPlayingStatus() { Type = (ActivityType)type, Status = playingStatus[1] });
             }
