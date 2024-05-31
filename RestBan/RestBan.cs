@@ -46,8 +46,9 @@ namespace RestBan
             }
 
             int num = 0;
-            List<string> errorList = new List<string>();
-            foreach (var item in _service.RestBanList)
+            var errorList = new List<string>();
+            var tempList = new List<ulong>(_service.RestBanList);
+            foreach (var item in tempList)
             {
                 try
                 {
@@ -61,6 +62,7 @@ namespace RestBan
                     errorList.Add(item.ToString());
 
                     _service.RestBanList.Remove(item);
+                    
                     File.WriteAllText(_service.FILE_PATH, JsonConvert.SerializeObject(_service.RestBanList));
                 }
                 catch (HttpException httpEx) when (httpEx.DiscordCode == DiscordErrorCode.UnknownUser)
