@@ -1,7 +1,7 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using HardMute.Database.Models;
-using Nadeko.Snake;
+using NadekoBot.Medusa;
 using Serilog;
 using System.Collections.Concurrent;
 
@@ -28,7 +28,7 @@ namespace HardMute.Services
                     if (HardMutedUsers.ContainsKey(item.GuildId))
                         HardMutedUsers[item.GuildId].Add(item.UserId);
                     else
-                        HardMutedUsers.TryAdd(item.GuildId, new ConcurrentHashSet<ulong> { item.UserId });
+                        HardMutedUsers.TryAdd(item.GuildId, [item.UserId]);
 
                     TimeSpan after;
                     if (item.UnmuteAt - TimeSpan.FromMinutes(1) <= DateTime.UtcNow)
@@ -103,6 +103,8 @@ namespace HardMute.Services
             //unmute timer to be added
             var toAdd = new Timer(async _ =>
             {
+                Log.Information("Unhardmute user {UserId} in guild {GuildId}", userId, guildId);
+
                 try
                 {
                     // unmute the user, this will also remove the timer from the db
@@ -111,7 +113,7 @@ namespace HardMute.Services
                 catch (Exception ex)
                 {
                     await RemoveTimerFromDbAsync(guildId, userId); // if unmute errored, just remove unmute from db
-                    Log.Warning(ex, "Couldn't unmute user {UserId} in guild {GuildId}", userId, guildId);
+                    Log.Warning(ex, "Couldn't unhardmute user {UserId} in guild {GuildId}", userId, guildId);
                 }
             }, null, after, Timeout.InfiniteTimeSpan);
 

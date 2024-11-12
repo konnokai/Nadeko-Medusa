@@ -1,9 +1,8 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using HardMute.Services;
-using Nadeko.Snake;
-using NadekoBot;
 using NadekoBot.Common.TypeReaders.Models;
+using NadekoBot.Medusa;
 using Serilog;
 
 namespace HardMute
