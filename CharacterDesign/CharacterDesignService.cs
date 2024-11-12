@@ -1,8 +1,9 @@
 ﻿using Discord;
 using Discord.WebSocket;
-using Nadeko.Snake;
+using NadekoBot.Db;
+using NadekoBot.Db.Models;
+using NadekoBot.Medusa;
 using NadekoBot.Services;
-using NadekoBot.Services.Database.Models;
 using Newtonsoft.Json;
 using Serilog;
 
@@ -71,7 +72,7 @@ namespace CharacterDesign.Service
             {
                 var temp = item.Split([':']);
                 if (Enum.TryParse(typeof(ActivityType), temp[0], true, out object type))
-                    @char.PlayingList.Add(new RotatingPlayingStatus() { Type = (ActivityType)type, Status = temp[1] });
+                    @char.PlayingList.Add(new RotatingPlayingStatus() { Type = (DbActivityType)type, Status = temp[1] });
             }
 
             try
@@ -97,7 +98,7 @@ namespace CharacterDesign.Service
             {
                 var playingStatus = item.Split([':']);
                 if (Enum.TryParse(typeof(ActivityType), playingStatus[0], true, out object? type))
-                    @char.PlayingList.Add(new RotatingPlayingStatus() { Type = (ActivityType)type, Status = playingStatus[1] });
+                    @char.PlayingList.Add(new RotatingPlayingStatus() { Type = (DbActivityType)type, Status = playingStatus[1] });
             }
 
             try
@@ -153,7 +154,9 @@ namespace CharacterDesign.Service
         {
             if (!Directory.Exists("data/char_design"))
                 return null;
-            return Directory.GetDirectories("data/char_design", "*", SearchOption.TopDirectoryOnly).Select(Path.GetFileName).OrderBy((x) => x).ToArray();
+            return [.. Directory.GetDirectories("data/char_design", "*", SearchOption.TopDirectoryOnly)
+                .Select(Path.GetFileName)
+                .OrderBy((x) => x)];
         }
 
         public async Task<(bool, CharacterDesign?)> SaveCharDesignAsync(string designName)

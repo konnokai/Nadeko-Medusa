@@ -1,9 +1,8 @@
 ﻿using Discord;
-using Discord.Net;
 using Discord.WebSocket;
-using Nadeko.Snake;
 using NadekoBot;
-using Serilog;
+using NadekoBot.Extensions;
+using NadekoBot.Medusa;
 
 namespace CharacterDesign
 {
@@ -12,8 +11,8 @@ namespace CharacterDesign
         private const string BUTTON_YES = "BUTTON_YES";
         private const string BUTTON_NO = "BUTTON_NO";
 
-        private static readonly Emoji _okEmoji = new Emoji("✅");
-        private static readonly Emoji _errorEmoji = new Emoji("❌");
+        private static readonly Emoji _okEmoji = new("✅");
+        private static readonly Emoji _errorEmoji = new("❌");
 
         public static string ToDesignPath(this string designName)
         {
@@ -32,110 +31,70 @@ namespace CharacterDesign
             return false;
         }
 
-        public static async Task SendYesNoConfirmAsync(this AnyContext ctx, IEmbedBuilder eb, DiscordSocketClient client, string text, Action<bool> action, IUser? user = null, bool withNo = true)
+        public static async Task SendYesNoConfirmAsync(this AnyContext ctx, ResponseBuilder _builder, DiscordSocketClient client, string text, Action<bool> action, IUser? user = null, bool withNo = true)
         {
-            ComponentBuilder GetComponentBuilder()
+            var model = await _builder.BuildAsync(true);
+
+            NadekoButtonInteractionHandler? yes;
+            NadekoButtonInteractionHandler? no;
+
+            (NadekoButtonInteractionHandler yes, NadekoButtonInteractionHandler no) GetInteractions()
             {
-                var cb = new ComponentBuilder();
+                var yesButton = new ButtonBuilder()
+                                 .WithStyle(ButtonStyle.Primary)
+                                 .WithCustomId(BUTTON_YES)
+                                 .WithEmote(_okEmoji);
 
-                cb.WithButton(new ButtonBuilder()
-                    .WithStyle(ButtonStyle.Primary)
-                    .WithCustomId(BUTTON_YES)
-                    .WithEmote(_okEmoji));
-
-                if (withNo)
-                {
-                    cb.WithButton(new ButtonBuilder()
-                        .WithStyle(ButtonStyle.Danger)
-                        .WithCustomId(BUTTON_NO)
-                        .WithEmote(_errorEmoji));
-                }
-
-                return cb;
-            }
-
-            async Task RemoveComponentAsync(SocketMessageComponent smc)
-            {
-                await smc.ModifyOriginalResponseAsync(x =>
-                {
-                    x.Embed = eb.Build();
-                    x.Components = new ComponentBuilder().Build(); // 按下後就移除掉按鈕
-                });
-            }
-
-            eb.WithOkColor().WithDescription(text);
-
-            var component = GetComponentBuilder().Build();
-            var msg = await ctx.Channel.SendMessageAsync(null, embed: eb.Build(), components: component);
-            bool isSelect = false;
-
-            async Task OnInteractionAsync(SocketInteraction si)
-            {
-                try
-                {
-                    if (si.HasResponded)
-                        return;
-
-                    if (si is not SocketMessageComponent smc)
-                        return;
-
-                    if (smc.Message.Id != msg.Id)
-                        return;
-
-                    if (isSelect)
-                        return;
-
-                    if (user != null && smc.User.Id != user.Id)
-                    {
-                        await si.RespondAsync(embed: new EmbedBuilder().WithColor(Color.Red).WithDescription("你不可使用本按鈕").Build(), ephemeral: true);
-                        return;
-                    }
-                    else if (user == null && smc.User.Id != ctx.User.Id)
-                    {
-                        await si.RespondAsync(embed: new EmbedBuilder().WithColor(Color.Red).WithDescription("你不可使用本按鈕").Build(), ephemeral: true);
-                        return;
-                    }
-
-                    await si.DeferAsync();
-
-                    if (smc.Data.CustomId == BUTTON_YES)
+                var yesBtnInter = new NadekoButtonInteractionHandler(client,
+                    user?.Id ?? 0,
+                    yesButton,
+                    (smc) =>
                     {
                         action(true);
-                        isSelect = true;
-                        _ = RemoveComponentAsync(smc);
-                    }
-                    else if (smc.Data.CustomId == BUTTON_NO)
+                        return Task.CompletedTask;
+                    },
+                    user != null,
+                    singleUse: true,
+                    clearAfter: false);
+
+                var noButton = new ButtonBuilder()
+                                  .WithStyle(ButtonStyle.Danger)
+                                  .WithCustomId(BUTTON_NO)
+                                  .WithEmote(_errorEmoji);
+
+                var noBtnInter = new NadekoButtonInteractionHandler(client,
+                    user?.Id ?? 0,
+                    noButton,
+                    (smc) =>
                     {
                         action(false);
-                        isSelect = true;
-                        _ = RemoveComponentAsync(smc);
-                    }
-                }
-                catch (Exception ex)
-                {
-                    Log.Error(ex, "Error in SendYesNoConfirmAsync pagination: {ErrorMessage}", ex.Message);
-                }
+                        return Task.CompletedTask;
+                    },
+                    user != null,
+                    singleUse: true,
+                    clearAfter: true);
+
+                return (yesBtnInter, noBtnInter);
             }
 
-            client.InteractionCreated += OnInteractionAsync;
+            (yes, no) = GetInteractions();
 
-            int i = 60;
-            do
-            {
-                i--;
-                await Task.Delay(500);
-            } while (!isSelect && i >= 0);
+            var cb = new ComponentBuilder();
+            yes.AddTo(cb);
+            no.AddTo(cb);
 
-            client.InteractionCreated -= OnInteractionAsync;
+            var msg = await model.TargetChannel
+                                 .SendMessageAsync(model.Text,
+                                     embed: new EmbedBuilder().WithOkColor().WithDescription(text).Build(),
+                                     components: cb.Build(),
+                                     allowedMentions: model.SanitizeMentions,
+                                     messageReference: model.MessageReference);
 
-            try
-            {
-                await msg.ModifyAsync(mp => mp.Components = new ComponentBuilder().Build());
-            }
-            catch (HttpException discordEx) when (discordEx.DiscordCode == DiscordErrorCode.UnknownMessage)
-            {
-                Log.Information("訊息已刪除，略過");
-            }
+            await Task.WhenAll(yes.RunAsync(msg), no.RunAsync(msg));
+
+            await Task.Delay(30_000);
+
+            await msg.ModifyAsync(mp => mp.Components = new ComponentBuilder().Build());
         }
     }
 }

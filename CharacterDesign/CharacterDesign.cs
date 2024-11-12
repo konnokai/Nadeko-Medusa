@@ -1,21 +1,33 @@
 ﻿using CharacterDesign.Service;
+using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
-using Nadeko.Snake;
-using NadekoBot;
+using NadekoBot.Common;
+using NadekoBot.Extensions;
+using NadekoBot.Medusa;
 using NadekoBot.Services;
 using Serilog;
 
 namespace CharacterDesign
 {
-    public class CharacterDesign : Snek
+    public sealed class CharacterDesign : Snek
     {
         private readonly DiscordSocketClient _client;
         private readonly CharacterDesignService _service;
+        private readonly ResponseBuilder _response;
 
-        public CharacterDesign(DiscordSocketClient client, ImagesConfig ic, IHttpClientFactory factory, IImageCache images, DbService db, CharacterDesignService service)
+        public CharacterDesign(DiscordSocketClient client,
+            CharacterDesignService service,
+            IBotStrings botStrings,
+            BotConfigService botConfigService,
+            ImagesConfig ic,
+            IHttpClientFactory factory,
+            IImageCache images,
+            DbService db)
         {
             _client = client;
             _service = service;
+            _response = new ResponseBuilder(botStrings, botConfigService, client);
 
             _service.Inject(client, ic, factory, images, db);
         }
@@ -45,7 +57,8 @@ namespace CharacterDesign
 
             if (result.Item1 && result.Item2 != null)
             {
-                var embed = ctx.Embed().WithOkColor()
+                var embed = new EmbedBuilder()
+                    .WithColor(Color.Green)
                     .WithTitle("人設新增成功!")
                     .WithThumbnailUrl(charAvatar)
                     .WithDescription($"名稱: {designName}\n\n" +
@@ -69,7 +82,8 @@ namespace CharacterDesign
 
             if (result.Item1 && result.Item2 != null)
             {
-                var embed = ctx.Embed().WithOkColor()
+                var embed = new EmbedBuilder()
+                    .WithColor(Color.Green)
                     .WithTitle("人設狀態新增成功!")
                     .WithDescription($"名稱: {designName}\n\n" +
                     $"PlayingStatus:" +
@@ -101,14 +115,26 @@ namespace CharacterDesign
             var list = _service.ListCharDesign();
 
             if (list == null || list.Length == 0)
+            {
                 await ctx.SendErrorAsync("人設清單空白");
+            }
             else
-                await ctx.SendPaginatedConfirmAsync(_client, 0, (row) =>
-                {
-                    return ctx.Embed().WithOkColor()
-                    .WithTitle("可用人設")
-                    .WithDescription(string.Join('\n', list.Skip(10 * row).Take(10)));
-                }, list.Count(), 10);
+            {
+                await _response
+                    .Context(new SocketCommandContext(_client, (SocketUserMessage)ctx.Message))
+                    .Paginated()
+                    .Items(list)
+                    .PageSize(10)
+                    .AddFooter()
+                    .Page((items, _) =>
+                    {
+                        return new EmbedBuilder()
+                            .WithColor(Color.Green)
+                            .WithTitle("可用人設")
+                            .WithDescription(string.Join('\n', items));
+                    })
+                    .SendAsync();
+            }
         }
 
         [cmd(["SaveCharDesign", "scd"])]
@@ -122,12 +148,13 @@ namespace CharacterDesign
 
             if (result.Item1 && result.Item2 != null)
             {
-                var embed = ctx.Embed().WithOkColor()
+                var embed = new EmbedBuilder()
+                    .WithColor(Color.Green)
                     .WithTitle("人設保存成功!")
                     .WithThumbnailUrl(_client.CurrentUser.GetAvatarUrl())
                     .WithDescription($"名稱: {designName}\n\n" +
-                    $"PlayingStatus:" +
-                    $"\n{string.Join('\n', result.Item2.PlayingList.Select(rs => $"{rs.Type} {rs.Status}"))}");
+                        $"PlayingStatus:" +
+                        $"\n{string.Join('\n', result.Item2.PlayingList.Select(rs => $"{rs.Type} {rs.Status}"))}");
 
                 await ctx.Channel.SendMessageAsync(null, false, embed.Build());
             }
@@ -142,14 +169,14 @@ namespace CharacterDesign
             if (string.IsNullOrEmpty(designName))
                 designName = _client.CurrentUser.Username;
 
-            await ctx.SendYesNoConfirmAsync(ctx.Embed(), _client, $"確定要刪除 {designName} 的人設嗎?", async (actoin) =>
+            await ctx.SendYesNoConfirmAsync(_response, _client, $"確定要刪除 {designName} 的人設嗎?", async (action) =>
             {
-                if (actoin)
+                if (action)
                 {
                     if (_service.DeleteCharDesign(designName)) await ctx.SendConfirmAsync("人設刪除成功");
                     else await ctx.SendErrorAsync("人設刪除失敗");
                 }
-            });
+            }, ctx.User);
         }
     }
 }

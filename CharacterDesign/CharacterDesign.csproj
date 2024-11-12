@@ -1,25 +1,26 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 
 		<!-- Reduces some boilerplate in your .cs files -->
-		<ImplicitUsings>enable</ImplicitUsings>
-
-		<!-- Use latest .net features -->
-		<LangVersion>preview</LangVersion>
-		<EnablePreviewFeatures>true</EnablePreviewFeatures>
-		<GenerateRequiresPreviewFeaturesAttribute>true</GenerateRequiresPreviewFeaturesAttribute>
+		<ImplicitUsings>true</ImplicitUsings>
 
 		<!-- tell .net that this library will be used as a plugin -->
 		<EnableDynamicLoading>true</EnableDynamicLoading>
 	</PropertyGroup>
+	<ItemGroup>
+		<!-- 不知道為啥吃不到 Nadeko 自身專案的套件引用，另外拉需求出來  -->
+		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" ReferenceOutputAssembly="false"/>
+		<PackageReference Include="Discord.Net" Version="3.15.3" ReferenceOutputAssembly="false"/>
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" ReferenceOutputAssembly="false" />
+	</ItemGroup>
 
 	<ItemGroup>
 		<!-- Base medusa package. You MUST reference this in order to have a working medusa -->
 		<!-- Also, this package comes from MyGet, which requires you to have a NuGet.Config file
         next to your .csproj -->
 		<!-- Version must match your bot's version -->
-		<PackageReference Include="Nadeko.Medusa" Version="4.3.21">
+		<PackageReference Include="Nadeko.Medusa" Version="5.*-*">
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 
@@ -36,14 +37,14 @@
           you should do "git
         checkout 4.1.0" in your NadekoBot solution and then reference the NadekoBot.csproj
         -->
-		<ProjectReference Include="..\nadekobot\src\NadekoBot\NadekoBot.csproj" ReferenceOutputAssembly="True">
+		<ProjectReference Include="..\nadekobot\src\NadekoBot\NadekoBot.csproj" ReferenceOutputAssembly="false" Configuration="Release">
 			<PrivateAssets>all</PrivateAssets>
 		</ProjectReference>
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Reference Include="Nadeko.Common">
-	    <HintPath>..\nadekobot\src\Nadeko.Common\obj\Debug\net6.0\ref\Nadeko.Common.dll</HintPath>
+	  <Reference Include="NadekoBot">
+	    <HintPath>..\nadekobot\src\NadekoBot\obj\Release\net8.0\ref\NadekoBot.dll</HintPath>
 	  </Reference>
 	</ItemGroup>
 

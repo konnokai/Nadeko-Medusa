@@ -1,5 +1,5 @@
 addchardesign:
-  desc: "新增人設\n\nPlayingStatus格式:\nType:Status|Type:Status...\nType = Playing, Streaming, Listening, Watching"
+  desc: "新增人設\n\nPlayingStatus格式:\nType:Status|Type:Status...\nType = Playing, Streaming, Listening, Watching, CustomStatus, Competing"
   args:
     - "人設名稱 人設頭像 [PlayingStatus]"
 savechardesign:
@@ -7,7 +7,7 @@ savechardesign:
   args:
     - "[人設名稱]"
 addchardesignplayingstatus:
-  desc: "新增人設PlayingStatus\n\n格式:\nType:Status|Type:Status...\nType = Playing, Streaming, Listening, Watching"
+  desc: "新增人設PlayingStatus\n\n格式:\nType:Status|Type:Status...\nType = Playing, Streaming, Listening, Watching, CustomStatus, Competing"
   args:
     - "人設名稱 [PlayingStatus]"
 changechardesign:
