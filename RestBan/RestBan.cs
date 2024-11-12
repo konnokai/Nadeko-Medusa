@@ -1,8 +1,7 @@
 ﻿using Discord;
 using Discord.Net;
 using Discord.WebSocket;
-using Nadeko.Snake;
-using NadekoBot;
+using NadekoBot.Medusa;
 using Newtonsoft.Json;
 using RestBan.Service;
 using Serilog;
@@ -34,7 +33,6 @@ namespace RestBan
             return base.DisposeAsync();
         }
 
-
         [cmd(["RestBan"])]
         [bot_owner_only]
         public async Task RestBanAsync(AnyContext ctx, ulong userId = 0)
@@ -62,7 +60,7 @@ namespace RestBan
                     errorList.Add(item.ToString());
 
                     _service.RestBanList.Remove(item);
-                    
+
                     File.WriteAllText(_service.FILE_PATH, JsonConvert.SerializeObject(_service.RestBanList));
                 }
                 catch (HttpException httpEx) when (httpEx.DiscordCode == DiscordErrorCode.UnknownUser)
@@ -78,7 +76,8 @@ namespace RestBan
                 }
             }
 
-            var toSend = ctx.Embed().WithOkColor()
+            var toSend = new EmbedBuilder()
+                .WithColor(Color.Green)
                 .WithTitle("⛔️ 用戶已被封鎖")
                 .AddField("ID", userId, true)
                 .AddField("總共被Ban的伺服器數量", num.ToString(), true);
