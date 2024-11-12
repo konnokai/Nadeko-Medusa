@@ -1,36 +1,36 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 
 		<!-- Reduces some boilerplate in your .cs files -->
 		<ImplicitUsings>enable</ImplicitUsings>
-
-		<!-- Use latest .net features -->
-		<LangVersion>preview</LangVersion>
-		<EnablePreviewFeatures>true</EnablePreviewFeatures>
-		<GenerateRequiresPreviewFeaturesAttribute>true</GenerateRequiresPreviewFeaturesAttribute>
 
 		<!-- tell .net that this library will be used as a plugin -->
 		<EnableDynamicLoading>true</EnableDynamicLoading>
 	</PropertyGroup>
 
 	<ItemGroup>
+		<!-- 不知道為啥吃不到 Nadeko 自身專案的套件引用，另外拉需求出來  -->
+		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0"/>
+		<PackageReference Include="Discord.Net" Version="3.15.3"/>
+
 		<!-- Base medusa package. You MUST reference this in order to have a working medusa -->
 		<!-- Also, this package comes from MyGet, which requires you to have a NuGet.Config file
         next to your .csproj -->
 		<!-- Version must match your bot's version -->
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="6.0.7" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="6.0.7">
+		<PackageReference Include="Nadeko.Medusa" Version="5.*-*">
+			<PrivateAssets>all</PrivateAssets>
+		</PackageReference>
+
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="6.0.7" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="6.0.7">
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.8" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.8">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-		</PackageReference>
-		<PackageReference Include="Nadeko.Medusa" Version="4.3.21">
-			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 
 		<!-- Note: If you want to use NadekoBot services etc... You will have to manually clone
@@ -46,9 +46,13 @@
           you should do "git
         checkout 4.1.0" in your NadekoBot solution and then reference the NadekoBot.csproj
         -->
-		<ProjectReference Include="..\nadekobot\src\NadekoBot\NadekoBot.csproj" ReferenceOutputAssembly="True">
+		<ProjectReference Include="..\nadekobot\src\NadekoBot\NadekoBot.csproj" ReferenceOutputAssembly="False" Configuration="Release">
 			<PrivateAssets>all</PrivateAssets>
 		</ProjectReference>
+
+		<Reference Include="NadekoBot">
+			<HintPath>..\nadekobot\src\NadekoBot\obj\Release\net8.0\ref\NadekoBot.dll</HintPath>
+		</Reference>
 	</ItemGroup>
 
 	<!-- Copy shortcut and full strings to output (if they exist) -->

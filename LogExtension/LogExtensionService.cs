@@ -1,8 +1,8 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using Microsoft.EntityFrameworkCore;
-using Nadeko.Snake;
 using NadekoBot.Extensions;
+using NadekoBot.Medusa;
 using Serilog;
 using System.Collections.Concurrent;
 using System.Text.RegularExpressions;

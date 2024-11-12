@@ -1,8 +1,7 @@
 ﻿using Discord.WebSocket;
 using LogExtension.Service;
-using Nadeko.Snake;
-using NadekoBot;
 using NadekoBot.Common;
+using NadekoBot.Medusa;
 using Serilog;
 
 namespace LogExtension
@@ -116,7 +115,7 @@ namespace LogExtension
         public async Task LogIgnore(GuildContext ctx)
         {
             // true if logignore is removed
-            var isRemoved = _logCommandService.LogIgnore(ctx.Guild.Id, ctx.Channel.Id, NadekoBot.Services.Database.Models.IgnoredItemType.Channel);
+            var isRemoved = _logCommandService.LogIgnore(ctx.Guild.Id, ctx.Channel.Id, NadekoBot.Db.Models.IgnoredItemType.Channel);
 
             using (var db = Database.DBContext.GetDbContext())
             {
