@@ -3,16 +3,16 @@
 		<TargetFramework>net8.0</TargetFramework>
 
 		<!-- Reduces some boilerplate in your .cs files -->
-		<ImplicitUsings>true</ImplicitUsings>
+		<ImplicitUsings>enable</ImplicitUsings>
 
 		<!-- tell .net that this library will be used as a plugin -->
 		<EnableDynamicLoading>true</EnableDynamicLoading>
 	</PropertyGroup>
 	<ItemGroup>
 		<!-- 不知道為啥吃不到 Nadeko 自身專案的套件引用，另外拉需求出來  -->
-		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" ReferenceOutputAssembly="false"/>
-		<PackageReference Include="Discord.Net" Version="3.15.3" ReferenceOutputAssembly="false"/>
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" ReferenceOutputAssembly="false" />
+		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0"/>
+		<PackageReference Include="Discord.Net" Version="3.15.3"/>
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8"/>
 	</ItemGroup>
 
 	<ItemGroup>
@@ -37,15 +37,15 @@
           you should do "git
         checkout 4.1.0" in your NadekoBot solution and then reference the NadekoBot.csproj
         -->
-		<ProjectReference Include="..\nadekobot\src\NadekoBot\NadekoBot.csproj" ReferenceOutputAssembly="false" Configuration="Release">
+		<ProjectReference Include="..\nadekobot\src\NadekoBot\NadekoBot.csproj" ReferenceOutputAssembly="False" Configuration="Release">
 			<PrivateAssets>all</PrivateAssets>
 		</ProjectReference>
 	</ItemGroup>
 
 	<ItemGroup>
-	  <Reference Include="NadekoBot">
-	    <HintPath>..\nadekobot\src\NadekoBot\obj\Release\net8.0\ref\NadekoBot.dll</HintPath>
-	  </Reference>
+		<Reference Include="NadekoBot">
+			<HintPath>..\nadekobot\src\NadekoBot\obj\Release\net8.0\ref\NadekoBot.dll</HintPath>
+		</Reference>
 	</ItemGroup>
 
 	<!-- Copy shortcut and full strings to output (if they exist) -->
