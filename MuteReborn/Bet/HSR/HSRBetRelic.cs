@@ -2,9 +2,8 @@
 
 using Discord;
 using MuteReborn.Bet.HSR;
-using Nadeko.Snake;
+using NadekoBot.Medusa;
 using NadekoBot;
-using NadekoBot.Extensions;
 using System.Text.Json;
 
 namespace MuteReborn;
@@ -13,7 +12,7 @@ public partial class MuteReborn
     [cmd(["HSRStartBetRelic", "hsrbs"])]
     public async Task HSRStartBetRelic(GuildContext ctx, [leftover] string text = "")
     {
-        if (!ctx.Message.Attachments.Any())
+        if (ctx.Message.Attachments.Count == 0)
         {
             await ctx.SendErrorAsync("需要包含圖片");
             return;
@@ -23,7 +22,7 @@ public partial class MuteReborn
         var hSRBetData = _service.RunningHSRBetList.FirstOrDefault((x) => x.GamblingUser.Id == ctx.User.Id);
         if (hSRBetData != null)
         {
-            await ctx.SendYesNoConfirmAsync(ctx.Embed(), _client, "你有賭局尚未結束，是否取消?", (act) =>
+            await ctx.SendYesNoConfirmAsync(_response, _client, "你有賭局尚未結束，是否取消?", (act) =>
             {
                 if (act)
                 {
@@ -49,8 +48,8 @@ public partial class MuteReborn
             betMessage = betGuildConfigs.HSRBetStartMessage;
 
         var message = await ctx.Channel.SendMessageAsync(betMessage,
-               embed: ctx.Embed()
-                   .WithColor(EmbedColor.Ok)
+               embed: new EmbedBuilder()
+                   .WithColor(Color.Green)
                    .WithTitle(ctx.User.ToString())
                    .WithDescription("附加訊息: " + (string.IsNullOrEmpty(text) ? "無" : text))
                    .WithImageUrl(ctx.Message.Attachments.First().Url)
@@ -59,8 +58,8 @@ public partial class MuteReborn
                components: BuildAffixSelectMenu(betGuid, true));
 
         var message2 = await message.ReplyAsync(
-             embed: ctx.Embed()
-                 .WithColor(EmbedColor.Ok)
+             embed: new EmbedBuilder()
+                 .WithColor(Color.Green)
                  .WithTitle("詞條選擇清單")
                  .WithDescription("無")
                  .Build());
@@ -79,9 +78,9 @@ public partial class MuteReborn
         }
 
         bool isCancel = false;
-        if (!hSRBetData.SelectedRankDic.Any())
+        if (hSRBetData.SelectedRankDic.IsEmpty)
         {
-            await ctx.SendYesNoConfirmAsync(ctx.Embed(), _client, $"{ctx.User} 你的賭局尚無人選則，是否取消本賭局?", async (act) =>
+            await ctx.SendYesNoConfirmAsync(_response, _client, $"{ctx.User} 你的賭局尚無人選則，是否取消本賭局?", async (act) =>
             {
                 if (act)
                 {
@@ -95,7 +94,7 @@ public partial class MuteReborn
         if (isCancel)
             return;
 
-        if (!ctx.Message.Attachments.Any())
+        if (ctx.Message.Attachments.Count == 0)
         {
             await ctx.SendErrorAsync("需要包含合成後的詞條截圖");
             return;
@@ -119,8 +118,8 @@ public partial class MuteReborn
 
         await channel.SendFilesAsync(
             attachments: new List<FileAttachment>() { new FileAttachment(imageStream, "rank.jpg"), new FileAttachment(stringStream, "rank.json", isSpoiler: true) },
-            embed: ctx.Embed()
-                .WithColor(EmbedColor.Ok)
+            embed: new EmbedBuilder()
+                .WithColor(Color.Green)
                 .WithTitle(hSRBetData.GamblingUser.ToString() + " 的詞條賭局選擇清單")
                 .WithDescription($"附加訊息: {hSRBetData.AddMessage}\n\n" +
                     $"詞條選擇清單:\n" +
@@ -134,7 +133,10 @@ public partial class MuteReborn
 
         _service.RunningHSRBetList.Remove(hSRBetData);
 
-        await hSRBetData.GamblingMessage.ReplyAsync(embed: ctx.Embed().WithColor(EmbedColor.Ok).WithDescription("已結束並封存本賭局").Build());
+        await hSRBetData.GamblingMessage.ReplyAsync(embed: new EmbedBuilder()
+                 .WithColor(Color.Green)
+                 .WithDescription("已結束並封存本賭局")
+                 .Build());
     }
 
     private async Task DisableComponentAsync(IUserMessage userMessage)

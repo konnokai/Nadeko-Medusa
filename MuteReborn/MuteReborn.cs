@@ -1,9 +1,9 @@
 ﻿using Discord;
 using Discord.WebSocket;
 using MuteReborn.Services;
-using Nadeko.Snake;
-using NadekoBot;
+using NadekoBot.Common;
 using NadekoBot.Extensions;
+using NadekoBot.Medusa;
 using NadekoBot.Modules.Administration.Services;
 using NadekoBot.Modules.Gambling.Services;
 using NadekoBot.Services;
@@ -22,10 +22,18 @@ public sealed partial class MuteReborn : Snek
     private readonly ICurrencyService _cs;
     private readonly MuteRebornService _service;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ResponseBuilder _response;
 
     private string CurrencySign => _gss.Data.Currency.Sign;
 
-    public MuteReborn(MuteService MuteService, DiscordSocketClient client, GamblingConfigService gss, ICurrencyService cs, MuteRebornService service, IHttpClientFactory httpClientFactory)
+    public MuteReborn(MuteService MuteService,
+        IBotStrings botStrings,
+        BotConfigService botConfigService,
+        DiscordSocketClient client,
+        GamblingConfigService gss,
+        ICurrencyService cs,
+        MuteRebornService service,
+        IHttpClientFactory httpClientFactory)
     {
         _muteService = MuteService;
         _client = client;
@@ -33,6 +41,7 @@ public sealed partial class MuteReborn : Snek
         _cs = cs;
         _service = service;
         _httpClientFactory = httpClientFactory;
+        _response = new ResponseBuilder(botStrings, botConfigService, client);
     }
 
     private async Task _client_SelectMenuExecuted(SocketMessageComponent component)
@@ -157,7 +166,7 @@ public sealed partial class MuteReborn : Snek
     public async Task ToggleMuteReborn(GuildContext ctx)
     {
         var result = _service.ToggleRebornStatus(ctx.Guild);
-        await ctx.Channel.SendConfirmAsync(ctx, "死者蘇生已" + (result ? "開啟" : "關閉")).ConfigureAwait(false);
+        await ctx.SendConfirmAsync("死者蘇生已" + (result ? "開啟" : "關閉")).ConfigureAwait(false);
     }
 
     [cmd(["SettingMuteReborn", "smb"])]
@@ -169,7 +178,7 @@ public sealed partial class MuteReborn : Snek
 
         if (guild == null)
         {
-            await ctx.Channel.SendErrorAsync(ctx, "尚未設定死者蘇生");
+            await ctx.SendErrorAsync("尚未設定死者蘇生");
             return;
         }
 
@@ -179,36 +188,36 @@ public sealed partial class MuteReborn : Snek
                 {
                     if (value == 0)
                     {
-                        await ctx.Channel.SendConfirmAsync(ctx, $"購買甦生券需花費: {guild.BuyMuteRebornTicketCost}{CurrencySign}");
+                        await ctx.SendConfirmAsync($"購買甦生券需花費: {guild.BuyMuteRebornTicketCost}{CurrencySign}");
                         return;
                     }
 
                     if (value < 1000 || value > 100000)
                     {
-                        await ctx.Channel.SendErrorAsync(ctx, "金額僅可限制在 1000 ~ 100000 內");
+                        await ctx.SendErrorAsync("金額僅可限制在 1000 ~ 100000 內");
                         return;
                     }
 
                     guild.BuyMuteRebornTicketCost = value;
-                    await ctx.Channel.SendConfirmAsync(ctx, $"購買甦生券需花費: {guild.BuyMuteRebornTicketCost}{CurrencySign}");
+                    await ctx.SendConfirmAsync($"購買甦生券需花費: {guild.BuyMuteRebornTicketCost}{CurrencySign}");
                 }
                 break;
             case MuteRebornService.SettingType.EachTicketIncreaseMuteTime:
                 {
                     if (value == 0)
                     {
-                        await ctx.Channel.SendConfirmAsync(ctx, $"每張甦生券可增加: {guild.EachTicketIncreaseMuteTime}分");
+                        await ctx.SendConfirmAsync($"每張甦生券可增加: {guild.EachTicketIncreaseMuteTime}分");
                         return;
                     }
 
                     if (value < 5 || value > 120)
                     {
-                        await ctx.Channel.SendErrorAsync(ctx, "時間僅可限制在 5 ~ 120 內");
+                        await ctx.SendErrorAsync("時間僅可限制在 5 ~ 120 內");
                         return;
                     }
 
                     guild.EachTicketIncreaseMuteTime = value;
-                    await ctx.Channel.SendConfirmAsync(ctx, $"每張甦生券可增加: {guild.EachTicketIncreaseMuteTime}分" +
+                    await ctx.SendConfirmAsync($"每張甦生券可增加: {guild.EachTicketIncreaseMuteTime}分" +
                         (guild.EachTicketIncreaseMuteTime > guild.MaxIncreaseMuteTime ? "\n請注意EachTicketIncreaseMuteTime數值比MaxIncreaseMuteTime大，將無法增加勞改時間" : ""));
                 }
                 break;
@@ -216,42 +225,42 @@ public sealed partial class MuteReborn : Snek
                 {
                     if (value == 0)
                     {
-                        await ctx.Channel.SendConfirmAsync(ctx, $"每張甦生券可減少: {guild.EachTicketDecreaseMuteTime}分");
+                        await ctx.SendConfirmAsync($"每張甦生券可減少: {guild.EachTicketDecreaseMuteTime}分");
                         return;
                     }
 
                     if (value < 5 || value > 120)
                     {
-                        await ctx.Channel.SendErrorAsync(ctx, "時間僅可限制在 5 ~ 120 內");
+                        await ctx.SendErrorAsync("時間僅可限制在 5 ~ 120 內");
                         return;
                     }
 
                     guild.EachTicketDecreaseMuteTime = value;
-                    await ctx.Channel.SendConfirmAsync(ctx, $"每張甦生券可減少: {guild.EachTicketDecreaseMuteTime}分");
+                    await ctx.SendConfirmAsync($"每張甦生券可減少: {guild.EachTicketDecreaseMuteTime}分");
                 }
                 break;
             case MuteRebornService.SettingType.MaxIncreaseMuteTime:
                 {
                     if (value == 0)
                     {
-                        await ctx.Channel.SendConfirmAsync(ctx, $"最大可增加勞改時間: {guild.MaxIncreaseMuteTime}分");
+                        await ctx.SendConfirmAsync($"最大可增加勞改時間: {guild.MaxIncreaseMuteTime}分");
                         return;
                     }
 
                     if (value < 10 || value > 360)
                     {
-                        await ctx.Channel.SendErrorAsync(ctx, "時間僅可限制在 10 ~ 360 內");
+                        await ctx.SendErrorAsync("時間僅可限制在 10 ~ 360 內");
                         return;
                     }
 
                     guild.MaxIncreaseMuteTime = value;
-                    await ctx.Channel.SendConfirmAsync(ctx, $"最大可增加勞改時間: {guild.MaxIncreaseMuteTime}分" +
+                    await ctx.SendConfirmAsync($"最大可增加勞改時間: {guild.MaxIncreaseMuteTime}分" +
                         (guild.EachTicketIncreaseMuteTime > guild.MaxIncreaseMuteTime ? "\n請注意 EachTicketIncreaseMuteTime 數值比 MaxIncreaseMuteTime 大，將無法增加勞改時間" : ""));
                 }
                 break;
             case MuteRebornService.SettingType.GetAllSetting:
                 {
-                    await ctx.Channel.SendConfirmAsync(ctx, $"購買甦生券需花費: {guild.BuyMuteRebornTicketCost}{CurrencySign}\n" +
+                    await ctx.SendConfirmAsync($"購買甦生券需花費: {guild.BuyMuteRebornTicketCost}{CurrencySign}\n" +
                         $"每張甦生券可增加: {guild.EachTicketIncreaseMuteTime}分\n" +
                         $"每張甦生券可減少: {guild.EachTicketDecreaseMuteTime}分\n" +
                         $"最大可增加勞改時間: {guild.MaxIncreaseMuteTime}分" +
@@ -270,7 +279,7 @@ public sealed partial class MuteReborn : Snek
     public async Task AddMuteRebornTicketNum(GuildContext ctx, int num, IGuildUser user)
     {
         var result = await _service.AddRebornTicketNumAsync(ctx.Guild, user, num).ConfigureAwait(false);
-        await ctx.Channel.SendConfirmAsync(ctx, result.Item2).ConfigureAwait(false);
+        await ctx.SendConfirmAsync(result.Item2).ConfigureAwait(false);
     }
 
     [cmd(["AddMuteRebornTicketNum", "amrtn"])]
@@ -290,7 +299,7 @@ public sealed partial class MuteReborn : Snek
         }
 
         var result = await _service.AddRebornTicketNumAsync(ctx.Guild, userList, num).ConfigureAwait(false);
-        await ctx.Channel.SendConfirmAsync(ctx, result).ConfigureAwait(false);
+        await ctx.SendConfirmAsync(result).ConfigureAwait(false);
     }
 
     [cmd(["ListMuteRebornTicketNum", "lmrtn"])]
@@ -299,7 +308,7 @@ public sealed partial class MuteReborn : Snek
         var resultReborn = _service.ListRebornTicketNum(ctx.Guild);
         if (resultReborn.Count == 0)
         {
-            await ctx.Channel.SendErrorAsync(ctx, "無資料，可能尚未設定死者蘇生或是還沒有人持有甦生券").ConfigureAwait(false);
+            await ctx.SendErrorAsync("無資料，可能尚未設定死者蘇生或是還沒有人持有甦生券").ConfigureAwait(false);
             return;
         }
 
@@ -321,18 +330,18 @@ public sealed partial class MuteReborn : Snek
         var resultReborn = _service.ListRebornTicketNum(ctx.Guild);
         if (resultReborn.Count == 0)
         {
-            await ctx.Channel.SendErrorAsync(ctx, "無資料，可能尚未設定死者蘇生或是還沒有人持有甦生券").ConfigureAwait(false);
+            await ctx.SendErrorAsync("無資料，可能尚未設定死者蘇生或是還沒有人持有甦生券").ConfigureAwait(false);
             return;
         }
 
         var muteReborn = resultReborn.FirstOrDefault((x) => x.UserId == userId);
         if (muteReborn == null)
         {
-            await ctx.Channel.SendConfirmAsync(ctx, $"<@{userId}> 的次數為: 0").ConfigureAwait(false);
+            await ctx.SendConfirmAsync($"<@{userId}> 的次數為: 0").ConfigureAwait(false);
             return;
         }
 
-        await ctx.Channel.SendConfirmAsync(ctx, $"<@{userId}> 的次數為: {muteReborn.RebornTicketNum}").ConfigureAwait(false);
+        await ctx.SendConfirmAsync($"<@{userId}> 的次數為: {muteReborn.RebornTicketNum}").ConfigureAwait(false);
     }
 
     [cmd(["BuyMuteRebornTicket", "bmrt"])]
@@ -340,7 +349,7 @@ public sealed partial class MuteReborn : Snek
     {
         if (num <= 0)
         {
-            await ctx.Channel.SendErrorAsync(ctx, "購買數量需大於一張").ConfigureAwait(false);
+            await ctx.SendErrorAsync("購買數量需大於一張").ConfigureAwait(false);
             return;
         }
 
@@ -357,7 +366,7 @@ public sealed partial class MuteReborn : Snek
         var buyCost = guildConfig.BuyMuteRebornTicketCost * num;
         if (currency < buyCost)
         {
-            await ctx.Channel.SendErrorAsync(ctx, $"你的錢錢不夠，加油好嗎\n你還缺 {buyCost - currency}{CurrencySign} 才能購買").ConfigureAwait(false);
+            await ctx.SendErrorAsync($"你的錢錢不夠，加油好嗎\n你還缺 {buyCost - currency}{CurrencySign} 才能購買").ConfigureAwait(false);
             return;
         }
 
@@ -365,9 +374,9 @@ public sealed partial class MuteReborn : Snek
         {
             var result = await _service.AddRebornTicketNumAsync(ctx.Guild, ctx.User, num);
             if (result.Item1)
-                await ctx.Channel.SendConfirmAsync(ctx, result.Item2).ConfigureAwait(false);
+                await ctx.SendConfirmAsync(result.Item2).ConfigureAwait(false);
             else
-                await ctx.Channel.SendErrorAsync(ctx, $"內部錯誤，已扣除金額但無法購買\n請向管理員要求直接增加次數: {num}").ConfigureAwait(false);
+                await ctx.SendErrorAsync($"內部錯誤，已扣除金額但無法購買\n請向管理員要求直接增加次數: {num}").ConfigureAwait(false);
 
             await db.SaveChangesAsync().ConfigureAwait(false);
         }
@@ -378,19 +387,19 @@ public sealed partial class MuteReborn : Snek
     {
         if (!_service.GetRebornStatus(ctx.Guild))
         {
-            await ctx.Channel.SendErrorAsync(ctx, "未設定過死者蘇生").ConfigureAwait(false);
+            await ctx.SendErrorAsync("未設定過死者蘇生").ConfigureAwait(false);
             return;
         }
 
         if (!_service.CanReborn(ctx.Guild, ctx.User))
         {
-            await ctx.Channel.SendErrorAsync(ctx, "蘇生券不足阿🈹").ConfigureAwait(false);
+            await ctx.SendErrorAsync("蘇生券不足阿🈹").ConfigureAwait(false);
             return;
         }
 
         if (!_service.MutingList.Add($"{ctx.Guild.Id}-{user.Id}"))
         {
-            await ctx.Channel.SendErrorAsync(ctx, "正在勞改當中").ConfigureAwait(false);
+            await ctx.SendErrorAsync("正在勞改當中").ConfigureAwait(false);
             return;
         }
 
@@ -398,7 +407,7 @@ public sealed partial class MuteReborn : Snek
         if (muteReborn.Item1)
             await SiNeMute(ctx, TimeSpan.FromMinutes(_service.GetRebornSetting(ctx.Guild, MuteRebornService.SettingType.EachTicketIncreaseMuteTime)), user, muteReborn.Item2);
         else
-            await ctx.Channel.SendErrorAsync(ctx, muteReborn.Item2).ConfigureAwait(false);
+            await ctx.SendErrorAsync(muteReborn.Item2).ConfigureAwait(false);
     }
 
     private async Task SiNeMute(GuildContext ctx, TimeSpan time, IGuildUser user, string str)
@@ -416,7 +425,7 @@ public sealed partial class MuteReborn : Snek
                     int guildMaxIncreaseMuteTime = _service.GetRebornSetting(ctx.Guild, MuteRebornService.SettingType.MaxIncreaseMuteTime);
                     if (guildIncreaseMuteTime > guildMaxIncreaseMuteTime)
                     {
-                        await ctx.Channel.SendConfirmAsync(ctx, $"{str}" +
+                        await ctx.SendConfirmAsync($"{str}" +
                             $"因 EachTicketIncreaseMuteTime({guildIncreaseMuteTime}) 設定數值比 MaxIncreaseMuteTime({guildMaxIncreaseMuteTime}) 大\n" +
                             $"故無法增加勞改時間");
                     }
@@ -470,7 +479,7 @@ public sealed partial class MuteReborn : Snek
                         if (addTime > 0)
                         {
                             time += TimeSpan.FromMinutes(addTime);
-                            await ctx.Channel.SendConfirmAsync(ctx, resultText + $"總共被加了 {addTime} 分鐘").ConfigureAwait(false);
+                            await ctx.SendConfirmAsync(resultText + $"總共被加了 {addTime} 分鐘").ConfigureAwait(false);
                         }
                     }
                 }
@@ -478,14 +487,17 @@ public sealed partial class MuteReborn : Snek
             catch (Exception ex)
             {
                 Log.Error(ex, $"AddMuteTIme: {ctx.Guild.Name}({ctx.Guild.Id}) / {user.Username}({user.Id})");
-                await ctx.Channel.SendConfirmAsync(ctx, "錯誤，請向 <@284989733229297664>(konnokai) 詢問");
+                await ctx.SendConfirmAsync("錯誤，請向 <@284989733229297664>(konnokai) 詢問");
             }
 
             if (user.Id == 284989733229297664)
             {
                 _service.MutingList.Remove($"{ctx.Guild.Id}-{user.Id}");
                 user = (IGuildUser)ctx.User;
-                await ctx.Channel.SendMessageAsync(embed: ctx.Embed().WithColor(EmbedColor.Ok).WithImageUrl("https://konnokai.me/nadeko/potter.png").Build());
+                await ctx.Channel.SendMessageAsync(embed: new EmbedBuilder()
+                    .WithColor(Color.Green)
+                    .WithImageUrl("https://konnokai.me/nadeko/potter.png")
+                    .Build());
             }
 
             await _muteService.TimedMute(user, ctx.User, time, MuteType.Chat, "主動勞改").ConfigureAwait(false);
@@ -499,7 +511,7 @@ public sealed partial class MuteReborn : Snek
                 {
                     if (_muteService.UnTimers.TryGetValue(ctx.Guild.Id, out var keyValuePairs) && keyValuePairs.TryGetValue((user.Id, MuteService.TimerType.Mute), out var timer))
                     {
-                        await ctx.SendYesNoConfirmAsync(ctx.Embed(), _client, $"{Format.Bold(user.ToString())} 剩餘 {_service.GetRebornTicketNum(ctx.Guild, user.Id)} 張甦生券，要使用嗎", async (result) =>
+                        await ctx.SendYesNoConfirmAsync(_response, _client, $"{Format.Bold(user.ToString())} 剩餘 {_service.GetRebornTicketNum(ctx.Guild, user.Id)} 張甦生券，要使用嗎", async (result) =>
                         {
                             if (result)
                             {
@@ -518,11 +530,11 @@ public sealed partial class MuteReborn : Snek
                                 }
 
                                 resultText += (await _service.AddRebornTicketNumAsync(ctx.Guild, user, -1).ConfigureAwait(false)).Item2;
-                                await ctx.Channel.SendConfirmAsync(ctx, resultText).ConfigureAwait(false);
+                                await ctx.SendConfirmAsync(resultText).ConfigureAwait(false);
                             }
                             else
                             {
-                                await ctx.Channel.SendConfirmAsync(ctx, "好ㄅ，勞改愉快").ConfigureAwait(false);
+                                await ctx.SendConfirmAsync("好ㄅ，勞改愉快").ConfigureAwait(false);
                             }
                         }, user, false).ConfigureAwait(false);
                     }
@@ -533,13 +545,13 @@ public sealed partial class MuteReborn : Snek
             catch (Exception ex)
             {
                 Log.Error(ex, $"SiNeMuteReborn: {ctx.Guild.Name}({ctx.Guild.Id}) / {user.Username}({user.Id})");
-                await ctx.Channel.SendConfirmAsync(ctx, "錯誤，請向 <@284989733229297664>(konnokai) 詢問");
+                await ctx.SendConfirmAsync("錯誤，請向 <@284989733229297664>(konnokai) 詢問");
             }
         }
         catch (Exception ex)
         {
             Log.Warning(ex, "");
-            await ctx.Channel.SendErrorAsync(ctx, $"錯誤: {ex.Message}");
+            await ctx.SendErrorAsync($"錯誤: {ex.Message}");
         }
 
         _service.MutingList.Remove($"{ctx.Guild.Id}-{user.Id}");

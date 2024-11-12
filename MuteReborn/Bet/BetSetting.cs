@@ -1,7 +1,6 @@
-﻿using Discord;
+﻿using NadekoBot.Medusa;
+using Discord;
 using Discord.WebSocket;
-using Nadeko.Snake;
-using NadekoBot;
 
 namespace MuteReborn;
 

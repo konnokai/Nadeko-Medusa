@@ -2,7 +2,7 @@
 using MuteReborn.Bet.HSR;
 using MuteReborn.Database;
 using MuteReborn.Database.Models;
-using Nadeko.Snake;
+using NadekoBot.Medusa;
 using Serilog;
 
 namespace MuteReborn.Services;
