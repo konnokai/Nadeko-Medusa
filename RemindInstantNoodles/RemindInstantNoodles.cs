@@ -1,5 +1,4 @@
-﻿using Nadeko.Snake;
-using NadekoBot;
+﻿using NadekoBot.Medusa;
 using NadekoBot.Modules.Utility.Services;
 
 namespace RemindInstantNoodles
@@ -27,7 +26,7 @@ namespace RemindInstantNoodles
                 target = ctx.Channel.Id;
             }
 
-            await _remindService.AddReminderAsync(ctx.User.Id, target, guildId, isPrivate, DateTime.UtcNow.Add(TimeSpan.FromMinutes(minutes)), ctx.User.Mention + "該吃泡麵囉！").ConfigureAwait(false);
+            await _remindService.AddReminderAsync(ctx.User.Id, target, guildId, isPrivate, DateTime.UtcNow.Add(TimeSpan.FromMinutes(minutes)), ctx.User.Mention + "該吃泡麵囉！", NadekoBot.Db.Models.ReminderType.User).ConfigureAwait(false);
 
             await ctx.SendConfirmAsync($"⏰ 我將會於 `{minutes}` 分鐘後在 <#{target}> 提醒: {ctx.User.Mention}該吃泡麵囉！");
         }

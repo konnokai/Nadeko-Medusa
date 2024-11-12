@@ -1,14 +1,9 @@
 <Project Sdk="Microsoft.NET.Sdk">
 	<PropertyGroup>
-		<TargetFramework>net6.0</TargetFramework>
+		<TargetFramework>net8.0</TargetFramework>
 
 		<!-- Reduces some boilerplate in your .cs files -->
 		<ImplicitUsings>enable</ImplicitUsings>
-
-		<!-- Use latest .net features -->
-		<LangVersion>preview</LangVersion>
-		<EnablePreviewFeatures>true</EnablePreviewFeatures>
-		<GenerateRequiresPreviewFeaturesAttribute>true</GenerateRequiresPreviewFeaturesAttribute>
 
 		<!-- tell .net that this library will be used as a plugin -->
 		<EnableDynamicLoading>true</EnableDynamicLoading>
@@ -19,26 +14,15 @@
 		<!-- Also, this package comes from MyGet, which requires you to have a NuGet.Config file
         next to your .csproj -->
 		<!-- Version must match your bot's version -->
-		<PackageReference Include="Nadeko.Medusa" Version="4.3.21">
+		<PackageReference Include="Nadeko.Medusa" Version="5.*-*">
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
+	</ItemGroup>
 
-		<!-- Note: If you want to use NadekoBot services etc... You will have to manually clone
-          the
-        gitlab.com/kwoth/nadekobot repo locally and reference the NadekoBot.csproj because there is
-        no NadekoBot package atm.
-          It is strongly recommended that you checkout a specific
-        tag which matches your version of nadeko,
-          as there could be breaking changes even
-        between minor versions of NadekoBot.
-          For example if you're running NadekoBot
-        4.1.0 locally for which you want to create a medusa for,
-          you should do "git
-        checkout 4.1.0" in your NadekoBot solution and then reference the NadekoBot.csproj
-        -->
-		<ProjectReference Include="..\nadekobot\src\NadekoBot\NadekoBot.csproj" ReferenceOutputAssembly="True">
-			<PrivateAssets>all</PrivateAssets>
-		</ProjectReference>
+	<ItemGroup>
+		<Reference Include="NadekoBot">
+			<HintPath>..\nadekobot\src\NadekoBot\obj\Release\net8.0\ref\NadekoBot.dll</HintPath>
+		</Reference>
 	</ItemGroup>
 
 	<!-- Copy shortcut and full strings to output (if they exist) -->
