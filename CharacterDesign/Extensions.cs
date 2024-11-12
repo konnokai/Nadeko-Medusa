@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord.Commands;
 using Discord.WebSocket;
 using NadekoBot;
 using NadekoBot.Extensions;
@@ -10,9 +11,6 @@ namespace CharacterDesign
     {
         private const string BUTTON_YES = "BUTTON_YES";
         private const string BUTTON_NO = "BUTTON_NO";
-
-        private static readonly Emoji _okEmoji = new("✅");
-        private static readonly Emoji _errorEmoji = new("❌");
 
         public static string ToDesignPath(this string designName)
         {
@@ -33,7 +31,7 @@ namespace CharacterDesign
 
         public static async Task SendYesNoConfirmAsync(this AnyContext ctx, ResponseBuilder _builder, DiscordSocketClient client, string text, Action<bool> action, IUser? user = null, bool withNo = true)
         {
-            var model = await _builder.BuildAsync(true);
+            var model = await _builder.Context(new SocketCommandContext(client, (SocketUserMessage)(ctx.Message))).BuildAsync(true);
 
             NadekoButtonInteractionHandler? yes;
             NadekoButtonInteractionHandler? no;
@@ -41,9 +39,9 @@ namespace CharacterDesign
             (NadekoButtonInteractionHandler yes, NadekoButtonInteractionHandler no) GetInteractions()
             {
                 var yesButton = new ButtonBuilder()
-                                 .WithStyle(ButtonStyle.Primary)
+                                 .WithStyle(ButtonStyle.Success)
                                  .WithCustomId(BUTTON_YES)
-                                 .WithEmote(_okEmoji);
+                                 .WithLabel("是");
 
                 var yesBtnInter = new NadekoButtonInteractionHandler(client,
                     user?.Id ?? 0,
@@ -55,12 +53,12 @@ namespace CharacterDesign
                     },
                     user != null,
                     singleUse: true,
-                    clearAfter: false);
+                    clearAfter: true);
 
                 var noButton = new ButtonBuilder()
                                   .WithStyle(ButtonStyle.Danger)
                                   .WithCustomId(BUTTON_NO)
-                                  .WithEmote(_errorEmoji);
+                                  .WithLabel("否");
 
                 var noBtnInter = new NadekoButtonInteractionHandler(client,
                     user?.Id ?? 0,
@@ -81,11 +79,14 @@ namespace CharacterDesign
 
             var cb = new ComponentBuilder();
             yes.AddTo(cb);
-            no.AddTo(cb);
+            if (withNo)
+            {
+                no.AddTo(cb);
+            }
 
             var msg = await model.TargetChannel
                                  .SendMessageAsync(model.Text,
-                                     embed: new EmbedBuilder().WithOkColor().WithDescription(text).Build(),
+                                     embed: new EmbedBuilder().WithColor(Color.Green).WithDescription(text).Build(),
                                      components: cb.Build(),
                                      allowedMentions: model.SanitizeMentions,
                                      messageReference: model.MessageReference);
