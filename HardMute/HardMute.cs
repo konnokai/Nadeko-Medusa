@@ -41,7 +41,7 @@ namespace HardMute
 
         [cmd(["HardMute"])]
         [bot_owner_only]
-        public async Task HardMuteAsync(GuildContext ctx, StoopidTime time, [leftover] string user)
+        public async Task HardMuteAsync(GuildContext ctx, ParsedTimespan time, [leftover] string user)
         {
             if (time.Time < TimeSpan.FromMinutes(1) || time.Time > TimeSpan.FromDays(1))
                 return;

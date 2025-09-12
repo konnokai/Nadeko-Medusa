@@ -19,7 +19,7 @@ namespace CharacterDesign
         public CharacterDesign(DiscordSocketClient client,
             CharacterDesignService service,
             IBotStrings botStrings,
-            BotConfigService botConfigService,
+            IMessageSenderService messageSenderService,
             ImagesConfig ic,
             IHttpClientFactory factory,
             IImageCache images,
@@ -27,7 +27,7 @@ namespace CharacterDesign
         {
             _client = client;
             _service = service;
-            _response = new ResponseBuilder(botStrings, botConfigService, client);
+            _response = new ResponseBuilder(botStrings, messageSenderService, client);
 
             _service.Inject(client, ic, factory, images, db);
         }

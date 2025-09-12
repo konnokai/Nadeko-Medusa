@@ -28,7 +28,7 @@ public sealed partial class MuteReborn : Snek
 
     public MuteReborn(MuteService MuteService,
         IBotStrings botStrings,
-        BotConfigService botConfigService,
+        IMessageSenderService messageSenderService,
         DiscordSocketClient client,
         GamblingConfigService gss,
         ICurrencyService cs,
@@ -41,7 +41,7 @@ public sealed partial class MuteReborn : Snek
         _cs = cs;
         _service = service;
         _httpClientFactory = httpClientFactory;
-        _response = new ResponseBuilder(botStrings, botConfigService, client);
+        _response = new ResponseBuilder(botStrings, messageSenderService, client);
     }
 
     private async Task _client_SelectMenuExecuted(SocketMessageComponent component)
