@@ -11,24 +11,24 @@
 
 	<ItemGroup>
 		<!-- 不知道為啥吃不到 Nadeko 自身專案的套件引用，另外拉需求出來  -->
-		<PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0"/>
-		<PackageReference Include="Discord.Net" Version="3.15.3"/>
-		<PackageReference Include="NonBlocking" Version="2.1.2"/>
+		<PackageReference Include="Microsoft.Extensions.Http" Version="9.0.1" />
+		<PackageReference Include="Discord.Net" Version="3.18.0-beta.3" />
+		<PackageReference Include="NonBlocking" Version="2.1.2" />
 
 		<!-- Base medusa package. You MUST reference this in order to have a working medusa -->
 		<!-- Also, this package comes from MyGet, which requires you to have a NuGet.Config file
         next to your .csproj -->
 		<!-- Version must match your bot's version -->
-		<PackageReference Include="Nadeko.Medusa" Version="5.*-*">
+		<PackageReference Include="Nadeko.Medusa" Version="6.1.19">
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 
-		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.8" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.8">
+		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.1" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.1">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.8" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="9.0.1" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.8">
 			<PrivateAssets>all</PrivateAssets>
 			<IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>

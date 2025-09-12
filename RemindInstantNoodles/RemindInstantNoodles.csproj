@@ -14,7 +14,7 @@
 		<!-- Also, this package comes from MyGet, which requires you to have a NuGet.Config file
         next to your .csproj -->
 		<!-- Version must match your bot's version -->
-		<PackageReference Include="Nadeko.Medusa" Version="5.*-*">
+		<PackageReference Include="Nadeko.Medusa" Version="6.1.19">
 			<PrivateAssets>all</PrivateAssets>
 		</PackageReference>
 	</ItemGroup>
