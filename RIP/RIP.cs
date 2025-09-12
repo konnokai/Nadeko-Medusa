@@ -52,7 +52,7 @@ namespace RemindInstantNoodles
             await using var picStream = await _service.GetRipPictureAsync(user.DisplayName ?? user.Username, new Uri(av));
             await ctx.Channel.SendFileAsync(picStream,
                 "rip.png",
-                $"Rip {Format.Bold(user.ToString())} \n\t- " + Format.Italics(ctx.User.ToString()));
+                $"Rip {Format.Bold(user.ToString())} \n\t\\- " + Format.Italics(ctx.User.ToString()));
 
         }
     }
