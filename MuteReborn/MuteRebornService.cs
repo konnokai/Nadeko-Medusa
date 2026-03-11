@@ -102,17 +102,17 @@ public class MuteRebornService
         try
         {
             using var db = DBContext.GetDbContext();
+
             var guildConfig = db.MuteRebornGuildConfigs.SingleOrDefault((x) => x.GuildId == guild.Id);
-
             if (guildConfig == null)
-                return 0;
-
-            var muteReborn = db.MuteRebornTickets.FirstOrDefault((x) => x.GuildId == guild.Id && x.UserId == userId);
-            if (muteReborn == null)
                 return 0;
 
             if (userId == 284989733229297664)
                 return 114514;
+
+            var muteReborn = db.MuteRebornTickets.FirstOrDefault((x) => x.GuildId == guild.Id && x.UserId == userId);
+            if (muteReborn == null)
+                return 0;
 
             return muteReborn.RebornTicketNum;
         }

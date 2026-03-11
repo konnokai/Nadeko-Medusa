@@ -3,7 +3,6 @@
 using Discord;
 using MuteReborn.Bet.HSR;
 using NadekoBot.Medusa;
-using NadekoBot;
 using System.Text.Json;
 
 namespace MuteReborn;

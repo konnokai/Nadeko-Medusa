@@ -288,7 +288,7 @@ public sealed partial class MuteReborn : Snek
     public async Task AddMuteRebornTicketNum(GuildContext ctx, int num, [leftover] string users)
     {
         var list = new List<string>(users.Replace("<@", "").Replace("!", "").Replace(">", "")
-            .Split(new char[] { ' ' }, StringSplitOptions.RemoveEmptyEntries).Distinct());
+            .Split([' '], StringSplitOptions.RemoveEmptyEntries).Distinct());
         var userList = new List<IGuildUser>();
 
         foreach (var item in list)
@@ -326,6 +326,12 @@ public sealed partial class MuteReborn : Snek
     {
         if (userId == 0)
             userId = ctx.User.Id;
+
+        if (userId == 284989733229297664)
+        {
+            await ctx.SendConfirmAsync($"<@{userId}> 的次數為: 114514").ConfigureAwait(false);
+            return;
+        }
 
         var resultReborn = _service.ListRebornTicketNum(ctx.Guild);
         if (resultReborn.Count == 0)
