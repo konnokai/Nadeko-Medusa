@@ -12,18 +12,11 @@
 		<!-- 不知道為啥吃不到 Nadeko 自身專案的套件引用，另外拉需求出來  -->
 		<PackageReference Include="Microsoft.Extensions.Http" Version="9.0.1" />
 		<PackageReference Include="Discord.Net" Version="3.18.0-beta.3" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
 		<PackageReference Include="Microsoft.EntityFrameworkCore" Version="9.0.1" />
 	</ItemGroup>
 
 	<ItemGroup>
-		<!-- Base medusa package. You MUST reference this in order to have a working medusa -->
-		<!-- Also, this package comes from MyGet, which requires you to have a NuGet.Config file
-        next to your .csproj -->
-		<!-- Version must match your bot's version -->
-		<PackageReference Include="Nadeko.Medusa" Version="6.1.19">
-			<PrivateAssets>all</PrivateAssets>
-		</PackageReference>
-
 		<!-- Note: If you want to use NadekoBot services etc... You will have to manually clone
           the
         gitlab.com/kwoth/nadekobot repo locally and reference the NadekoBot.csproj because there is
@@ -43,6 +36,9 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<Reference Include="Nadeko.Medusa">
+			<HintPath>..\nadekobot\src\Nadeko.Medusa\bin\Release\net8.0\Nadeko.Medusa.dll</HintPath>
+		</Reference>
 		<Reference Include="NadekoBot">
 			<HintPath>..\nadekobot\src\NadekoBot\obj\Release\net8.0\ref\NadekoBot.dll</HintPath>
 		</Reference>

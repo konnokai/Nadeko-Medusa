@@ -18,19 +18,14 @@
 		<PackageReference Include="SixLabors.ImageSharp" Version="3.1.7" />
 		<PackageReference Include="SixLabors.ImageSharp.Drawing" Version="2.1.5" />
 		<PackageReference Include="SixLabors.Shapes" Version="1.0.0-beta0009" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
 	</ItemGroup>
 
-	<ItemGroup>
-		<!-- Base medusa package. You MUST reference this in order to have a working medusa -->
-		<!-- Also, this package comes from MyGet, which requires you to have a NuGet.Config file
-        next to your .csproj -->
-		<!-- Version must match your bot's version -->
-		<PackageReference Include="Nadeko.Medusa" Version="6.1.19">
-			<PrivateAssets>all</PrivateAssets>
-		</PackageReference>
-	</ItemGroup>
 
 	<ItemGroup>
+		<Reference Include="Nadeko.Medusa">
+			<HintPath>..\nadekobot\src\Nadeko.Medusa\bin\Release\net8.0\Nadeko.Medusa.dll</HintPath>
+		</Reference>
 		<Reference Include="NadekoBot">
 			<HintPath>..\nadekobot\src\NadekoBot\obj\Release\net8.0\ref\NadekoBot.dll</HintPath>
 		</Reference>
