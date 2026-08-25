@@ -515,35 +515,32 @@ public sealed partial class MuteReborn : Snek
 
                 if (_service.CanReborn(ctx.Guild, user))
                 {
-                    if (_muteService.UnTimers.TryGetValue(ctx.Guild.Id, out var keyValuePairs) && keyValuePairs.TryGetValue((user.Id, MuteService.TimerType.Mute), out var timer))
+                    await ctx.SendYesNoConfirmAsync(_response, _client, $"{Format.Bold(user.ToString())} 剩餘 {_service.GetRebornTicketNum(ctx.Guild, user.Id)} 張甦生券，要使用嗎", async (result) =>
                     {
-                        await ctx.SendYesNoConfirmAsync(_response, _client, $"{Format.Bold(user.ToString())} 剩餘 {_service.GetRebornTicketNum(ctx.Guild, user.Id)} 張甦生券，要使用嗎", async (result) =>
+                        if (result)
                         {
-                            if (result)
+                            int guildDecreaseMuteTime = _service.GetRebornSetting(ctx.Guild, MuteRebornService.SettingType.EachTicketDecreaseMuteTime);
+                            var temp = time.Add(TimeSpan.FromMinutes(-guildDecreaseMuteTime)).Subtract(stopwatch.Elapsed);
+                            string resultText = "";
+                            if (temp > TimeSpan.FromSeconds(30))
                             {
-                                int guildDecreaseMuteTime = _service.GetRebornSetting(ctx.Guild, MuteRebornService.SettingType.EachTicketDecreaseMuteTime);
-                                var temp = time.Add(TimeSpan.FromMinutes(-guildDecreaseMuteTime)).Subtract(stopwatch.Elapsed);
-                                string resultText = "";
-                                if (temp > TimeSpan.FromSeconds(30))
-                                {
-                                    await _muteService.TimedMute(user, ctx.User, temp, reason: $"死者蘇生扣除 {guildDecreaseMuteTime} 分鐘").ConfigureAwait(false);
-                                    resultText = $"已扣除 {guildDecreaseMuteTime} 分鐘\n你還需要勞改 {temp:hh\\時mm\\分ss\\秒}\n";
-                                }
-                                else
-                                {
-                                    await _muteService.UnmuteUser(ctx.Guild.Id, user.Id, ctx.User, reason: "死者蘇生");
-                                    resultText = "歡迎回來\n";
-                                }
-
-                                resultText += (await _service.AddRebornTicketNumAsync(ctx.Guild, user, -1).ConfigureAwait(false)).Item2;
-                                await ctx.SendConfirmAsync(resultText).ConfigureAwait(false);
+                                await _muteService.TimedMute(user, ctx.User, temp, reason: $"死者蘇生扣除 {guildDecreaseMuteTime} 分鐘").ConfigureAwait(false);
+                                resultText = $"已扣除 {guildDecreaseMuteTime} 分鐘\n你還需要勞改 {temp:hh\\時mm\\分ss\\秒}\n";
                             }
                             else
                             {
-                                await ctx.SendConfirmAsync("好ㄅ，勞改愉快").ConfigureAwait(false);
+                                await _muteService.UnmuteUser(ctx.Guild.Id, user.Id, ctx.User, reason: "死者蘇生");
+                                resultText = "歡迎回來\n";
                             }
-                        }, user, false).ConfigureAwait(false);
-                    }
+
+                            resultText += (await _service.AddRebornTicketNumAsync(ctx.Guild, user, -1).ConfigureAwait(false)).Item2;
+                            await ctx.SendConfirmAsync(resultText).ConfigureAwait(false);
+                        }
+                        else
+                        {
+                            await ctx.SendConfirmAsync("好ㄅ，勞改愉快").ConfigureAwait(false);
+                        }
+                    }, user, false).ConfigureAwait(false);
                 }
 
                 stopwatch.Stop();
