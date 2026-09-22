@@ -48,10 +48,58 @@ namespace CharacterDesign.Service
             _replacement = replacement;
         }
 
-        public async Task<(bool, CharacterDesign?)> AddCharDesignAsync(string designName, string charAvatar, string playingList)
+        /// <summary>
+        /// 解析 <c>型別:狀態</c> 以 <c>|</c> 分隔的 PlayingStatus 字串。
+        /// 缺冒號、型別不合法或狀態為空都視為錯誤並帶出可顯示的訊息；
+        /// 呼叫端必須在寫入任何檔案前先驗證，否則格式錯誤會留下只寫了一半的人設目錄。
+        /// </summary>
+        /// <returns>全部項目都合法才回 true；失敗時 <paramref name="result"/> 必定為空，不會留下部分結果。</returns>
+        public static bool TryParsePlayingList(string playingList, out List<RotatingPlayingStatus> result, out string error)
+        {
+            result = [];
+
+            var list = playingList.Split(['|'], StringSplitOptions.RemoveEmptyEntries);
+            if (list.Length == 0)
+            {
+                error = "PlayingStatus 不可為空（格式為 `型別:狀態`，多筆以 `|` 分隔）";
+                return false;
+            }
+
+            var parsed = new List<RotatingPlayingStatus>(list.Length);
+
+            foreach (var item in list)
+            {
+                // 只取第一個冒號前的型別與其後完整的狀態文字
+                var parts = item.Split(':', 2);
+                if (parts.Length != 2 || string.IsNullOrWhiteSpace(parts[0]) || string.IsNullOrWhiteSpace(parts[1]))
+                {
+                    error = $"PlayingStatus 格式錯誤: `{item.Trim()}`（需為 `型別:狀態`）";
+                    return false;
+                }
+
+                if (!Enum.TryParse(typeof(ActivityType), parts[0].Trim(), true, out var type))
+                {
+                    error = $"PlayingStatus 型別不合法: `{parts[0].Trim()}`";
+                    return false;
+                }
+
+                parsed.Add(new RotatingPlayingStatus() { Type = (DbActivityType)type, Status = parts[1].Trim() });
+            }
+
+            result = parsed;
+            error = string.Empty;
+            return true;
+        }
+
+        public async Task<(bool, CharacterDesign?, string?)> AddCharDesignAsync(string designName, string charAvatar, string playingList)
         {
             if (File.Exists(designName.ToDesignPath() + "design.json"))
-                return (false, null);
+                return (false, null, null);
+
+            // 先驗證 PlayingStatus，避免格式錯誤時已經寫入頭像／背景卻沒有 design.json
+            if (!TryParsePlayingList(playingList, out var playingStatusList, out var parseError))
+                return (false, null, parseError);
+
             if (!Directory.Exists(designName.ToDesignPath()))
                 Directory.CreateDirectory(designName.ToDesignPath());
 
@@ -61,7 +109,7 @@ namespace CharacterDesign.Service
                 using (var sr = await http.GetAsync(charAvatar, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false))
                 {
                     if (!sr.IsImage())
-                        return (false, null);
+                        return (false, null, "頭像網址不是圖片");
 
                     var imgData = await sr.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
                     await File.WriteAllBytesAsync(designName.ToDesignPath() + "avatar.png", imgData).ConfigureAwait(false);
@@ -70,7 +118,7 @@ namespace CharacterDesign.Service
             catch (Exception ex)
             {
                 Log.Warning(ex, "");
-                return (false, null);
+                return (false, null, "頭像下載失敗");
             }
 
             try
@@ -82,52 +130,47 @@ namespace CharacterDesign.Service
             catch (Exception ex)
             {
                 Log.Warning(ex, "");
-                return (false, null);
+                return (false, null, "經驗值背景取得失敗");
             }
 
-            var @char = new CharacterDesign();
-            var list = playingList.Split(['|']);
-            foreach (string item in list)
-            {
-                var temp = item.Split([':']);
-                if (Enum.TryParse(typeof(ActivityType), temp[0], true, out object type))
-                    @char.PlayingList.Add(new RotatingPlayingStatus() { Type = (DbActivityType)type, Status = temp[1] });
-            }
+            var @char = new CharacterDesign() { PlayingList = playingStatusList };
 
             try
             {
                 await File.WriteAllTextAsync(designName.ToDesignPath() + "design.json", JsonConvert.SerializeObject(@char)).ConfigureAwait(false);
-                return (true, @char);
+                return (true, @char, null);
             }
-            catch
+            catch (Exception ex)
             {
-                return (false, null);
+                Log.Warning(ex, "");
+                return (false, null, "design.json 寫入失敗");
             }
         }
 
-        public (bool, CharacterDesign?) AddCharDesignPlayingStatus(string designName, string playingList)
+        public (bool, CharacterDesign?, string?) AddCharDesignPlayingStatus(string designName, string playingList)
         {
             if (!File.Exists(designName.ToDesignPath() + "design.json"))
-                return (false, null);
+                return (false, null, null);
+
+            // 先驗證再寫檔，避免壞輸入被靜默略過而存下少幾筆的設定
+            if (!TryParsePlayingList(playingList, out var playingStatusList, out var parseError))
+                return (false, null, parseError);
 
             CharacterDesign? @char = JsonConvert.DeserializeObject<CharacterDesign>(File.ReadAllText(designName.ToDesignPath() + "design.json"));
+            if (@char is null)
+                return (false, null, "design.json 內容損壞");
 
-            var list = playingList.Split(['|']);
-            foreach (string item in list)
-            {
-                var playingStatus = item.Split([':']);
-                if (Enum.TryParse(typeof(ActivityType), playingStatus[0], true, out object? type))
-                    @char.PlayingList.Add(new RotatingPlayingStatus() { Type = (DbActivityType)type, Status = playingStatus[1] });
-            }
+            @char.PlayingList.AddRange(playingStatusList);
 
             try
             {
                 File.WriteAllText(designName.ToDesignPath() + "design.json", JsonConvert.SerializeObject(@char));
-                return (true, @char);
+                return (true, @char, null);
             }
-            catch
+            catch (Exception ex)
             {
-                return (false, null);
+                Log.Warning(ex, "");
+                return (false, null, "design.json 寫入失敗");
             }
         }
 

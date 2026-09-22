@@ -26,6 +26,12 @@ namespace LogExtension.Service
         private ConcurrentBag<GuildLogConfigs> guildLogConfigs;
         private ConcurrentBag<Database.Models.LogIgnores> logIgnores;
 
+        /// <summary>
+        /// 進行中的附件下載，key 為目標檔案路徑。
+        /// 刪除事件靠它等待尚未寫完的檔案；下載結束後會自行移除。
+        /// </summary>
+        private readonly ConcurrentDictionary<string, Task> _pendingAttachments = new();
+
         public LogExtensionService()
         {
             // 刪除14天的附件紀錄
@@ -71,6 +77,9 @@ namespace LogExtension.Service
             _client.MessageReceived -= _client_MessageReceived;
             _client.MessageDeleted -= _client_MessageDeleted;
             _client.ReactionRemoved -= _client_ReactionRemoved;
+
+            // 卸載時停止每日清理工作，否則重新載入後會有多個清理 timer 同時存在
+            _autoDeleteAttachDir.Dispose();
         }
 
         public void RefreshConfig()
@@ -80,49 +89,66 @@ namespace LogExtension.Service
             logIgnores = new ConcurrentBag<Database.Models.LogIgnores>(db.LogIgnores.AsNoTracking());
         }
 
+        /// <summary>
+        /// 把訊息附件存到 attach_log，供訊息被刪除時補送紀錄。
+        /// 不在 gateway 事件裡等待網路下載（Discord.Net 會等待事件 handler，慢速下載會拖住同 shard 的其他事件），
+        /// 改為登記下載 Task，由刪除事件依檔案路徑等待對應的下載。
+        /// </summary>
         private Task _client_MessageReceived(SocketMessage arg)
         {
-            var _ = Task.Run(async () =>
+            try
             {
-                try
+                if (arg is not IUserMessage msg || msg.IsAuthor(_client))
+                    return Task.CompletedTask;
+
+                if (!msg.Attachments.Any())
+                    return Task.CompletedTask;
+
+                if (arg.Channel is not ITextChannel channel)
+                    return Task.CompletedTask;
+
+                if (!guildLogConfigs.Any((x) => x.GuildId == channel.GuildId) ||
+                    logIgnores.Any((x) => x.ChannelId == channel.Id))
+                    return Task.CompletedTask;
+
+                foreach (var item in msg.Attachments)
                 {
-                    if (arg is not IUserMessage msg || msg.IsAuthor(_client))
-                        return;
+                    if (item.Size >= 25 * 1048576 || !item.Url.TryGetAttachmentFilePath(out var path))
+                        continue;
 
-                    if (!msg.Attachments.Any())
-                        return;
+                    var filePath = $"attach_log/{msg.CreatedAt:yyyyMMdd}/{path}";
+                    var download = SaveAttachmentAsync(item.Url, filePath);
+                    _pendingAttachments[filePath] = download;
 
-                    if (arg.Channel is not ITextChannel channel)
-                        return;
-
-                    if (!guildLogConfigs.Any((x) => x.GuildId == channel.GuildId) ||
-                        logIgnores.Any((x) => x.ChannelId == channel.Id))
-                        return;
-
-                    using var httpClient = _httpFactory.CreateClient();
-
-                    foreach (var item in msg.Attachments)
-                    {
-                        if (item.Size < 25 * 1048576 && item.Url.TryGetAttachmentFilePath(out string path))
-                        {
-                            byte[] data = await httpClient.GetByteArrayAsync(item.Url);
-                            if (!Directory.Exists($"attach_log/{msg.CreatedAt:yyyyMMdd}"))
-                                Directory.CreateDirectory($"attach_log/{msg.CreatedAt:yyyyMMdd}");
-
-                            try
-                            {
-                                File.WriteAllBytes($"attach_log/{msg.CreatedAt:yyyyMMdd}/{path}", data);
-                            }
-                            catch { }
-                        }
-                    }
+                    // 下載結束（成功或失敗）就從登記表移除，避免無上限成長；
+                    // 之後才發生的刪除事件直接看檔案是否存在即可。
+                    _ = download.ContinueWith(_ => _pendingAttachments.TryRemove(filePath, out _), TaskScheduler.Default);
                 }
-                catch
-                {
-                    // ignored
-                }
-            });
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "LogExtensionService_Client_MessageReceived");
+            }
+
             return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// 下載附件並原子地寫入檔案。實際寫入交由 <see cref="Ext.SaveStreamAtomicallyAsync"/>。
+        /// 本方法不拋例外，讓等待它的刪除事件只需處理「檔案不存在」。
+        /// </summary>
+        private async Task SaveAttachmentAsync(string url, string filePath)
+        {
+            try
+            {
+                using var httpClient = _httpFactory.CreateClient();
+                await using var download = await httpClient.GetStreamAsync(url).ConfigureAwait(false);
+                await Ext.SaveStreamAtomicallyAsync(download, filePath).ConfigureAwait(false);
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "LogExtensionService: 附件下載失敗 {Url}", url);
+            }
         }
 
         private Task _client_MessageDeleted(Cacheable<IMessage, ulong> cacheMsg, Cacheable<IMessageChannel, ulong> cacheCh)
@@ -151,11 +177,20 @@ namespace LogExtension.Service
                     {
                         foreach (var item in msg.Attachments)
                         {
-                            if (item.Url.TryGetAttachmentFilePath(out string path) && File.Exists($"attach_log/{msg.CreatedAt:yyyyMMdd}/{path}"))
-                            {
-                                await logChannel.SendFileAsync($"attach_log/{msg.CreatedAt:yyyyMMdd}/{path}");
-                                File.Delete($"attach_log/{msg.CreatedAt:yyyyMMdd}/{path}");
-                            }
+                            if (!item.Url.TryGetAttachmentFilePath(out string path))
+                                continue;
+
+                            var filePath = $"attach_log/{msg.CreatedAt:yyyyMMdd}/{path}";
+
+                            // 下載可能還在進行中：先等它結束再判斷檔案是否存在（SaveAttachmentAsync 不拋例外）
+                            if (_pendingAttachments.TryGetValue(filePath, out var download))
+                                await download.ConfigureAwait(false);
+
+                            if (!File.Exists(filePath))
+                                continue;
+
+                            await logChannel.SendFileAsync(filePath);
+                            File.Delete(filePath);
                         }
                     }
                 }
@@ -202,7 +237,10 @@ namespace LogExtension.Service
 
                     await logChannel.SendMessageAsync(embed: embed).ConfigureAwait(false);
                 }
-                catch { }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "LogExtensionService_Client_ReactionRemoved");
+                }
             });
             return Task.CompletedTask;
         }
@@ -272,6 +310,45 @@ namespace LogExtension.Service
             }
             path = string.Empty;
             return false;
+        }
+
+        /// <summary>
+        /// 把 <paramref name="source"/> 原子地寫入 <paramref name="filePath"/>：
+        /// 先寫入 <c>.tmp</c>，完整複製並關閉後才搬到正式路徑。
+        /// 串流中途失敗時只會留下（並刪除）暫存檔，正式檔案不會出現被視為下載成功的截斷內容。
+        /// </summary>
+        /// <returns>寫入成功回 true；失敗回 false 並記錄 warning。</returns>
+        public static async Task<bool> SaveStreamAtomicallyAsync(Stream source, string filePath)
+        {
+            var tempPath = filePath + ".tmp";
+
+            try
+            {
+                var dir = Path.GetDirectoryName(filePath);
+                if (!string.IsNullOrEmpty(dir))
+                    Directory.CreateDirectory(dir);
+
+                await using (var file = File.Create(tempPath))
+                    await source.CopyToAsync(file).ConfigureAwait(false);
+
+                File.Move(tempPath, filePath, overwrite: true);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "LogExtensionService: 附件寫入失敗 {Path}", filePath);
+
+                try
+                {
+                    File.Delete(tempPath);
+                }
+                catch (Exception deleteEx)
+                {
+                    Log.Warning(deleteEx, "LogExtensionService: 刪除暫存檔失敗 {Path}", tempPath);
+                }
+
+                return false;
+            }
         }
     }
 }

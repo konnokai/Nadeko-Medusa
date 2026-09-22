@@ -10,7 +10,6 @@ using NadekoBot.Services;
 using NadekoBot.Services.Currency;
 using Serilog;
 using System.Diagnostics;
-using System.Text.Json;
 
 namespace MuteReborn;
 
@@ -21,7 +20,6 @@ public sealed partial class MuteReborn : Snek
     private readonly GamblingConfigService _gss;
     private readonly ICurrencyService _cs;
     private readonly MuteRebornService _service;
-    private readonly IHttpClientFactory _httpClientFactory;
     private readonly ResponseBuilder _response;
 
     private string CurrencySign => _gss.Data.Currency.Sign;
@@ -32,120 +30,20 @@ public sealed partial class MuteReborn : Snek
         DiscordSocketClient client,
         GamblingConfigService gss,
         ICurrencyService cs,
-        MuteRebornService service,
-        IHttpClientFactory httpClientFactory)
+        MuteRebornService service)
     {
         _muteService = MuteService;
         _client = client;
         _gss = gss;
         _cs = cs;
         _service = service;
-        _httpClientFactory = httpClientFactory;
         _response = new ResponseBuilder(botStrings, messageSenderService, client);
-    }
-
-    private async Task _client_SelectMenuExecuted(SocketMessageComponent component)
-    {
-        if (component.HasResponded)
-            return;
-
-        if (component.Data.CustomId.StartsWith("bet_"))
-        {
-            try
-            {
-                var hSRBetData = _service.RunningHSRBetList.FirstOrDefault((x) => x.BetGuid == component.Data.CustomId);
-                if (hSRBetData != null && hSRBetData.GamblingMessage.CreatedAt.AddMinutes(5) >= DateTimeOffset.UtcNow)
-                {
-                    if (component.User.Id == hSRBetData.GamblingUser.Id)
-                    {
-                        await component.RespondAsync($"你不可選擇自己的賭局", ephemeral: true);
-                        return;
-                    }
-
-                    string selectAffix = component.Data.Values.First();
-                    if (selectAffix == "cancel")
-                    {
-                        if (hSRBetData.SelectedRankDic.TryRemove(component.User.Id, out string select))
-                            await component.RespondAsync("已取消選擇", ephemeral: true);
-                        else
-                            await component.RespondAsync("尚未選擇詞條", ephemeral: true);
-                    }
-                    else
-                    {
-                        hSRBetData.SelectedRankDic.AddOrUpdate(component.User.Id, selectAffix, (_, _) => selectAffix);
-                        await component.RespondAsync($"選擇: {_service.SubAffixList[selectAffix]}", ephemeral: true);
-                    }
-
-                    await hSRBetData.SelectRankMessage.ModifyAsync((act) =>
-                        act.Embed = new EmbedBuilder()
-                            .WithColor(Color.Green)
-                            .WithTitle("詞條選擇清單")
-                            .WithDescription(string.Join('\n', hSRBetData.SelectedRankDic.Select((x) => $"<@{x.Key}>: {_service.SubAffixList[x.Value]}")))
-                            .Build()
-                        );
-                }
-                else
-                {
-                    await component.RespondAsync($"該賭局已結束或取消", ephemeral: true);
-                    await DisableComponentAsync(component.Message);
-                }
-            }
-            catch (Exception ex)
-            {
-                Log.Error(ex, $"bet_: {component.User} - {component.Data.CustomId}. {component.Data.Value}");
-            }
-
-        }
-        else if (component.Data.CustomId == "betend")
-        {
-            if (component.User is SocketGuildUser user && component.Channel is SocketGuildChannel channel)
-            {
-                var guild = channel.Guild;
-                if (user.GetRoles().Any((x) => x.Permissions.Administrator) || guild.OwnerId == user.Id)
-                {
-                    var jsonFile = component.Message.Attachments.FirstOrDefault((x) => x.Filename == "SPOILER_rank.json");
-                    if (jsonFile == null)
-                    {
-                        await component.RespondAsync("缺少 `SPOILER_rank.json` 檔案", ephemeral: true);
-                        await DisableComponentAsync(component.Message);
-                        return;
-                    }
-
-                    await component.DeferAsync(false);
-
-                    using var httpClient = _httpClientFactory.CreateClient();
-                    var jsonText = await httpClient.GetStringAsync(jsonFile.Url);
-                    var json = JsonSerializer.Deserialize<Dictionary<ulong, string>>(jsonText);
-
-                    string selectAffix = component.Data.Values.First();
-                    string result = "";
-                    foreach (var item in json)
-                    {
-                        var addResult = await _service.AddRebornTicketNumAsync(guild, item.Key, item.Value == selectAffix ? 3 : item.Value == "banker" ? 1 : -1);
-                        result += addResult.Item2;
-
-                        if (!addResult.Item1)
-                            break;
-                    }
-
-                    await component.FollowupAsync(embed: new EmbedBuilder().WithColor(Color.Green).WithDescription(result).Build());
-                    await DisableComponentAsync(component.Message);
-                }
-                else
-                {
-                    await component.RespondAsync("你無權使用本功能", ephemeral: true);
-                    return;
-                }
-            }
-        }
     }
 
     public override ValueTask InitializeAsync()
     {
         using (var db = Database.DBContext.GetDbContext())
             db.Database.EnsureCreated();
-
-        _client.SelectMenuExecuted += _client_SelectMenuExecuted;
 
         Log.Information("MuteReborn Medusa Start");
 
@@ -154,8 +52,6 @@ public sealed partial class MuteReborn : Snek
 
     public override ValueTask DisposeAsync()
     {
-        _client.SelectMenuExecuted -= _client_SelectMenuExecuted;
-
         Log.Information("MuteReborn Medusa Disposed");
 
         return base.DisposeAsync();
@@ -312,9 +208,14 @@ public sealed partial class MuteReborn : Snek
             return;
         }
 
-        var result = resultReborn.OrderByDescending((x) => x.RebornTicketNum).Select((x) => $"<@{x.UserId}>: {x.RebornTicketNum}");
-        await ctx.SendConfirmAsync("死者蘇生持有數\n" +
-             string.Join('\n', result.Skip(page * 15).Take(15)));
+        // 顯示可用張數（扣除進行中勞改保留的額度），否則會出現「清單有券但 SiNe 說券不足」
+        var result = resultReborn
+            .OrderByDescending((x) => x.RebornTicketNum)
+            .Skip(page * 15)
+            .Take(15)
+            .Select((x) => $"<@{x.UserId}>: {_service.GetAvailableTicketNum(ctx.Guild, x.UserId)}");
+
+        await ctx.SendConfirmAsync("死者蘇生持有數\n" + string.Join('\n', result));
     }
 
     [cmd(["ShowMuteRebornTicketNum", "smrtn"])]
@@ -340,14 +241,8 @@ public sealed partial class MuteReborn : Snek
             return;
         }
 
-        var muteReborn = resultReborn.FirstOrDefault((x) => x.UserId == userId);
-        if (muteReborn == null)
-        {
-            await ctx.SendConfirmAsync($"<@{userId}> 的次數為: 0").ConfigureAwait(false);
-            return;
-        }
-
-        await ctx.SendConfirmAsync($"<@{userId}> 的次數為: {muteReborn.RebornTicketNum}").ConfigureAwait(false);
+        // 顯示可用張數（扣除進行中勞改保留的額度），與 CanReborn／SiNe 的判斷一致
+        await ctx.SendConfirmAsync($"<@{userId}> 的次數為: {_service.GetAvailableTicketNum(ctx.Guild, userId)}").ConfigureAwait(false);
     }
 
     [cmd(["BuyMuteRebornTicket", "bmrt"])]
@@ -368,8 +263,9 @@ public sealed partial class MuteReborn : Snek
             return;
         }
 
+        var buyCost = MuteRebornService.CalculateBuyCost(guildConfig.BuyMuteRebornTicketCost, num);
+
         var currency = await _cs.GetBalanceAsync(ctx.User.Id);
-        var buyCost = guildConfig.BuyMuteRebornTicketCost * num;
         if (currency < buyCost)
         {
             await ctx.SendErrorAsync($"你的錢錢不夠，加油好嗎\n你還缺 {buyCost - currency}{CurrencySign} 才能購買").ConfigureAwait(false);
@@ -380,11 +276,39 @@ public sealed partial class MuteReborn : Snek
         {
             var result = await _service.AddRebornTicketNumAsync(ctx.Guild, ctx.User, num);
             if (result.Item1)
+            {
                 await ctx.SendConfirmAsync(result.Item2).ConfigureAwait(false);
+            }
             else
-                await ctx.SendErrorAsync($"內部錯誤，已扣除金額但無法購買\n請向管理員要求直接增加次數: {num}").ConfigureAwait(false);
+            {
+                // 扣款成功但發券失敗時退款，否則使用者會白白損失貨幣。
+                // AddAsync 會先更新餘額再寫交易紀錄並通知 tracker，後段失敗時錢可能已經退了，
+                // 因此這裡無法斷定「沒退成功」，只能標示狀態待查，不要引導管理員再次補券。
+                var refundUnknown = false;
+                try
+                {
+                    await _cs.AddAsync(ctx.User.Id, buyCost, new TxData("MuteRebornTicket", "Refund")).ConfigureAwait(false);
+                    Log.Warning("BuyMuteRebornTicket 發券失敗已退款: {GuildId} / {UserId} / {Num} / {Message}",
+                        ctx.Guild.Id, ctx.User.Id, num, result.Item2);
+                }
+                catch (Exception ex)
+                {
+                    refundUnknown = true;
+                    Log.Error(ex, "BuyMuteRebornTicket 退款結果待查: {GuildId} / {UserId} / {Amount}", ctx.Guild.Id, ctx.User.Id, buyCost);
+                }
 
-            await db.SaveChangesAsync().ConfigureAwait(false);
+                // 回覆訊息獨立於退款結果，否則退款成功但回覆失敗會被誤記成退款失敗
+                try
+                {
+                    await ctx.SendErrorAsync(refundUnknown
+                        ? $"內部錯誤，退款狀態待查\n請向管理員回報並確認餘額（購買數量: {num}）"
+                        : "內部錯誤，已將金額退回\n請稍後再試或向管理員回報").ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    Log.Warning(ex, "BuyMuteRebornTicket 回報失敗: {GuildId} / {UserId}", ctx.Guild.Id, ctx.User.Id);
+                }
+            }
         }
     }
 
@@ -397,29 +321,56 @@ public sealed partial class MuteReborn : Snek
             return;
         }
 
-        if (!_service.CanReborn(ctx.Guild, ctx.User))
+        var key = $"{ctx.Guild.Id}-{user.Id}";
+        if (!_service.MutingList.TryAdd(key, 0))
         {
-            await ctx.SendErrorAsync("蘇生券不足阿🈹").ConfigureAwait(false);
+            await ctx.SendErrorAsync("該使用者正在勞改中，需等本次勞改結束").ConfigureAwait(false);
             return;
         }
 
-        if (!_service.MutingList.Add($"{ctx.Guild.Id}-{user.Id}"))
+        try
         {
-            await ctx.SendErrorAsync("正在勞改當中").ConfigureAwait(false);
-            return;
-        }
+            // 先保留發起者的一張券：扣券在禁言成功後才執行，
+            // 沒有保留的話加時階段可以先把同一張券花掉，結束後再被扣一次。
+            // 這裡同時取代了原本的 CanReborn 檢查，才能分辨「沒券」與「券被自己另一場勞改佔住」。
+            if (!_service.TryReserveTicket(ctx.Guild, ctx.User.Id))
+            {
+                await ctx.SendErrorAsync(_service.IsTicketReserved(ctx.Guild, ctx.User.Id)
+                    ? "你有一場勞改正在進行中，需等本次勞改結束才能再使用甦生券"
+                    : "蘇生券不足阿🈹").ConfigureAwait(false);
+                return;
+            }
 
-        var muteReborn = await _service.AddRebornTicketNumAsync(ctx.Guild, (IGuildUser)ctx.User, -1);
-        if (muteReborn.Item1)
-            await SiNeMute(ctx, TimeSpan.FromMinutes(_service.GetRebornSetting(ctx.Guild, MuteRebornService.SettingType.EachTicketIncreaseMuteTime)), user, muteReborn.Item2);
-        else
-            await ctx.SendErrorAsync(muteReborn.Item2).ConfigureAwait(false);
+            await SiNeMute(ctx, TimeSpan.FromMinutes(_service.GetRebornSetting(ctx.Guild, MuteRebornService.SettingType.EachTicketIncreaseMuteTime)), user)
+                .ConfigureAwait(false);
+        }
+        finally
+        {
+            // 不論成功或例外都要移除，否則該使用者會一直收到「需等本次勞改結束」
+            _service.MutingList.TryRemove(key, out _);
+
+            // 正常路徑在扣券後就已釋放，這裡只涵蓋還沒走到扣券就失敗的情況（重複釋放是 no-op）
+            _service.ReleaseTicket(ctx.Guild, ctx.User.Id);
+        }
     }
 
-    private async Task SiNeMute(GuildContext ctx, TimeSpan time, IGuildUser user, string str)
+    /// <summary>
+    /// 對指定使用者執行勞改，並在禁言成功後才扣除發起者的一張甦生券。
+    /// 先禁言再扣券可避免 Discord API 失敗時已扣券卻沒有實際勞改；
+    /// 中途的加時流程會另外扣除加時者自己的券。
+    /// </summary>
+    private async Task SiNeMute(GuildContext ctx, TimeSpan time, IGuildUser user)
     {
         if (time < TimeSpan.FromMinutes(1) || time > TimeSpan.FromDays(1))
             return;
+
+        // 顯示用文字（實際扣除在禁言成功後才執行）。
+        // 此時發起者的券已被自己這場勞改保留，GetAvailableTicketNum 正好就是扣券後的剩餘張數；
+        // 硬編碼帳號的扣券是彩蛋、不會改動餘額，固定顯示 114514 以與 AddRebornTicketNumAsync 的回覆一致。
+        var remainAfterDeduct = ctx.User.Id == 284989733229297664
+            ? 114514
+            : _service.GetAvailableTicketNum(ctx.Guild, ctx.User.Id);
+        string str = $"<@{ctx.User.Id}> 增加 **-1**，剩餘 **{remainAfterDeduct}** 次蘇生機會\n";
 
         try
         {
@@ -448,7 +399,8 @@ public sealed partial class MuteReborn : Snek
                         {
                             foreach (var item in emoteList.Value)
                             {
-                                var userNum = _service.GetRebornTicketNum(ctx.Guild, item);
+                                // 以可用張數判斷，排除進行中勞改已保留的額度
+                                var userNum = _service.GetAvailableTicketNum(ctx.Guild, item);
                                 if (userNum <= 0)
                                     continue;
 
@@ -498,7 +450,6 @@ public sealed partial class MuteReborn : Snek
 
             if (user.Id == 284989733229297664)
             {
-                _service.MutingList.Remove($"{ctx.Guild.Id}-{user.Id}");
                 user = (IGuildUser)ctx.User;
                 await ctx.Channel.SendMessageAsync(embed: new EmbedBuilder()
                     .WithColor(Color.Green)
@@ -507,6 +458,15 @@ public sealed partial class MuteReborn : Snek
             }
 
             await _muteService.TimedMute(user, ctx.User, time, MuteType.Chat, "主動勞改").ConfigureAwait(false);
+
+            var deduct = await _service.AddRebornTicketNumAsync(ctx.Guild, (IGuildUser)ctx.User, -1).ConfigureAwait(false);
+            if (!deduct.Item1)
+                Log.Warning("SiNe 扣除甦生券失敗: {GuildId} / {UserId} / {Message}", ctx.Guild.Id, ctx.User.Id, deduct.Item2);
+
+            // 券的帳已結清，馬上釋放保留額度。
+            // 留到整段流程結束才釋放的話，後面的蘇生確認（最長 10 分鐘）會讓發起者新買的券一直不能用。
+            _service.ReleaseTicket(ctx.Guild, ctx.User.Id);
+
             await ctx.SendConfirmAsync($"{Format.Bold(user.ToString())} 已被禁言 {time.TotalMinutes} 分鐘").ConfigureAwait(false);
 
             try
@@ -515,7 +475,7 @@ public sealed partial class MuteReborn : Snek
 
                 if (_service.CanReborn(ctx.Guild, user))
                 {
-                    await ctx.SendYesNoConfirmAsync(_response, _client, $"{Format.Bold(user.ToString())} 剩餘 {_service.GetRebornTicketNum(ctx.Guild, user.Id)} 張甦生券，要使用嗎", async (result) =>
+                    await ctx.SendYesNoConfirmAsync(_response, _client, $"{Format.Bold(user.ToString())} 剩餘 {_service.GetAvailableTicketNum(ctx.Guild, user.Id)} 張甦生券，要使用嗎", async (result) =>
                     {
                         if (result)
                         {
@@ -556,7 +516,5 @@ public sealed partial class MuteReborn : Snek
             Log.Warning(ex, "");
             await ctx.SendErrorAsync($"錯誤: {ex.Message}");
         }
-
-        _service.MutingList.Remove($"{ctx.Guild.Id}-{user.Id}");
     }
 }

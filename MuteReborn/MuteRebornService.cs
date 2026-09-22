@@ -1,5 +1,5 @@
-﻿using Discord;
-using MuteReborn.Bet.HSR;
+﻿using System.Collections.Concurrent;
+using Discord;
 using MuteReborn.Database;
 using MuteReborn.Database.Models;
 using NadekoBot.Medusa;
@@ -10,21 +10,48 @@ namespace MuteReborn.Services;
 [svc(Lifetime.Singleton)]
 public class MuteRebornService
 {
-    internal List<HSRBetData> RunningHSRBetList { get; private set; } = new();
-    internal Dictionary<string, string> SubAffixList { get; } = new()
-    {
-        { "hp", "大/小生命" },
-        { "defence" , "大/小防禦" },
-        { "attack", "大/小攻擊" },
-        { "critical", "爆率/爆傷" },
-        { "status", "效果抗性/命中" },
-        { "break_damage", "擊破特攻" },
-        { "speed", "速度" },
-        { "banker", "莊家"}
-    };
-
     public enum SettingType { BuyMuteRebornTicketCost, EachTicketIncreaseMuteTime, EachTicketDecreaseMuteTime, MaxIncreaseMuteTime, GetAllSetting }
-    public HashSet<string> MutingList = [];
+
+    /// <summary>
+    /// 正在勞改中的「GuildId-UserId」清單。指令與 Discord 事件會並行存取，故使用可並行集合。
+    /// </summary>
+    public ConcurrentDictionary<string, byte> MutingList { get; } = new();
+
+    private readonly TicketReservations _reservations = new();
+
+    private static string TicketKey(ulong guildId, ulong userId)
+        => $"{guildId}-{userId}";
+
+    /// <summary>
+    /// 購買甦生券的總價。以 long 計算，避免 int 溢位讓總價變成 0 或負數而繞過餘額檢查。
+    /// </summary>
+    public static long CalculateBuyCost(int unitCost, int num)
+        => (long)unitCost * num;
+
+    /// <summary>
+    /// 為發起者保留一張券。扣券在禁言成功後才執行，沒有先保留的話，
+    /// 同一張券可以在加時階段先被花掉，結束後又被扣一次。
+    /// </summary>
+    public bool TryReserveTicket(IGuild guild, ulong userId)
+        => _reservations.TryReserve(TicketKey(guild.Id, userId), GetRebornTicketNum(guild, userId));
+
+    /// <summary>釋放先前保留的券；扣券完成或勞改失敗時都要呼叫。</summary>
+    public void ReleaseTicket(IGuild guild, ulong userId)
+        => _reservations.Release(TicketKey(guild.Id, userId));
+
+    /// <summary>
+    /// 該使用者是否有進行中的勞改所保留的券。
+    /// 用來區分「真的沒券」與「券被自己另一場勞改佔住」這兩種失敗原因。
+    /// </summary>
+    public bool IsTicketReserved(IGuild guild, ulong userId)
+        => _reservations.ReservedFor(TicketKey(guild.Id, userId)) > 0;
+
+    /// <summary>
+    /// 扣除進行中勞改所保留的額度後，實際可用的券數。
+    /// 所有會消耗券的路徑（加時、蘇生確認）都應以此為準。
+    /// </summary>
+    public int GetAvailableTicketNum(IGuild guild, ulong userId)
+        => Math.Max(0, GetRebornTicketNum(guild, userId) - _reservations.ReservedFor(TicketKey(guild.Id, userId)));
 
     public bool ToggleRebornStatus(IGuild guild)
     {
@@ -135,14 +162,8 @@ public class MuteRebornService
         if (user.Id == 284989733229297664)
             return true;
 
-        var muteReborn = db.MuteRebornTickets.FirstOrDefault((x) => x.GuildId == guild.Id && x.UserId == user.Id);
-        if (muteReborn == null)
-            return false;
-
-        if (muteReborn.RebornTicketNum > 0)
-            return true;
-
-        return false;
+        // 扣除進行中勞改保留的額度，避免同一張券被重複使用
+        return GetAvailableTicketNum(guild, user.Id) > 0;
     }
 
     public async Task<(bool, string)> AddRebornTicketNumAsync(IGuild guild, IUser user, int num)

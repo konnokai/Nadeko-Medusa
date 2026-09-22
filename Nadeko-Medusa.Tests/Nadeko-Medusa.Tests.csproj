@@ -1,0 +1,22 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<TargetFramework>net9.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<IsPackable>false</IsPackable>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\CharacterDesign\CharacterDesign.csproj" />
+		<ProjectReference Include="..\LogExtension\LogExtension.csproj" />
+		<ProjectReference Include="..\MuteReborn\MuteReborn.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- 外掛的公開成員會用到 NadekoBot 的型別，組件參考不會透過 ProjectReference 傳遞到編譯期 -->
+		<Reference Include="NadekoBot">
+			<HintPath>..\nadekobot\src\NadekoBot\bin\Release\net9.0\NadekoBot.dll</HintPath>
+		</Reference>
+	</ItemGroup>
+</Project>

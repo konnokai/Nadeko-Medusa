@@ -11,12 +11,25 @@ namespace HardMute.Services
     public class HardMuteService
     {
         private DiscordSocketClient _client;
+        private volatile bool _cancelled;
 
         public ConcurrentDictionary<ulong, ConcurrentHashSet<ulong>> HardMutedUsers { get; private set; } = new();
         public ConcurrentDictionary<ulong, ConcurrentDictionary<ulong, Timer>> UnTimers { get; } = new();
 
+        /// <summary>
+        /// 每個「GuildId-UserId」一把非同步鎖。
+        /// 同一使用者的禁言寫入、timer 替換與解除必須序列化，否則舊 timer 的 callback
+        /// 可能在更新途中執行，把剛寫入的解除紀錄刪掉並解除新的禁言。
+        /// 項目數與曾被 HardMute 過的 (guild, user) 數量同級，不另外回收。
+        /// </summary>
+        private readonly ConcurrentDictionary<string, SemaphoreSlim> _userGates = new();
+
+        private SemaphoreSlim GetUserGate(ulong guildId, ulong userId)
+            => _userGates.GetOrAdd($"{guildId}-{userId}", static _ => new SemaphoreSlim(1, 1));
+
         public void Inject(DiscordSocketClient client)
         {
+            _cancelled = false;
             _client = client;
             _client.MessageReceived += _client_MessageReceived;
 
@@ -48,7 +61,18 @@ namespace HardMute.Services
 
         public void CancelEvent()
         {
+            _cancelled = true;
+
             _client.MessageReceived -= _client_MessageReceived;
+
+            // 卸載時要把已建立的計時器一起釋放，否則舊計時器仍會執行並持有此 service
+            foreach (var userTimers in UnTimers.Values)
+            {
+                foreach (var timer in userTimers.Values)
+                    timer.Dispose();
+            }
+
+            UnTimers.Clear();
         }
 
         private async Task _client_MessageReceived(SocketMessage arg)
@@ -65,22 +89,50 @@ namespace HardMute.Services
             }
         }
 
-        public async Task TimedHardMute(IGuildUser user, TimeSpan after)
+        /// <summary>
+        /// 對使用者加上強制禁言並寫入解除時間。
+        /// 先清掉同一使用者的舊紀錄再寫入新的一筆，避免重複 HardMute 累積多筆而讓解除只刪到其中一筆；
+        /// 資料庫寫入成功後才更新記憶體狀態，寫入失敗時就不會留下沒有解除紀錄的封鎖。
+        /// 整段（查詢、刪除、新增、timer 替換）在同一使用者的鎖內執行，
+        /// 否則兩個並行呼叫可能都查不到舊紀錄而各自新增，或讓舊 timer 在更新途中刪掉新紀錄。
+        /// </summary>
+        /// <returns>真正執行成功回 true；外掛正在卸載而略過時回 false，呼叫端不可顯示成功。</returns>
+        public async Task<bool> TimedHardMute(IGuildUser user, TimeSpan after)
         {
-            MuteUser(user);
+            if (_cancelled)
+                return false;
 
-            using (var uow = Database.DBContext.GetDbContext())
+            var gate = GetUserGate(user.GuildId, user.Id);
+            await gate.WaitAsync().ConfigureAwait(false);
+            try
             {
-                var config = uow.UnmuteTimer.Add(new UnmuteTimer()
-                {
-                    GuildId = user.GuildId,
-                    UserId = user.Id,
-                    UnmuteAt = DateTime.UtcNow + after
-                });
-                await uow.SaveChangesAsync();
-            }
+                // 卸載後不要再建立新的 timer，否則沒人負責釋放
+                if (_cancelled)
+                    return false;
 
-            StartUn_Timer(user.GuildId, user.Id, after);
+                using (var uow = Database.DBContext.GetDbContext())
+                {
+                    var old = uow.UnmuteTimer.Where(x => x.GuildId == user.GuildId && x.UserId == user.Id);
+                    uow.UnmuteTimer.RemoveRange(old);
+                    uow.UnmuteTimer.Add(new UnmuteTimer()
+                    {
+                        GuildId = user.GuildId,
+                        UserId = user.Id,
+                        UnmuteAt = DateTime.UtcNow + after
+                    });
+                    await uow.SaveChangesAsync();
+                }
+
+                MuteUser(user);
+
+                StartUn_Timer(user.GuildId, user.Id, after);
+
+                return true;
+            }
+            finally
+            {
+                gate.Release();
+            }
         }
 
         public void MuteUser(IGuildUser usr)
@@ -97,38 +149,86 @@ namespace HardMute.Services
             ulong userId,
             TimeSpan after)
         {
+            if (_cancelled)
+                return;
+
             //load the unmute timers for this guild
             var userUnTimers = UnTimers.GetOrAdd(guildId, new ConcurrentDictionary<ulong, Timer>());
 
             //unmute timer to be added
-            var toAdd = new Timer(async _ =>
-            {
-                Log.Information("Unhardmute user {UserId} in guild {GuildId}", userId, guildId);
+            Timer? toAdd = null;
 
+            toAdd = new Timer(async _ =>
+            {
+                var gate = GetUserGate(guildId, userId);
+                await gate.WaitAsync().ConfigureAwait(false);
                 try
                 {
-                    // unmute the user, this will also remove the timer from the db
-                    await UnmuteUser(guildId, userId);
+                    // 被新的排程取代時，舊 timer 的 callback 可能已經排進執行佇列，
+                    // Dispose 阻止不了它；這裡再確認自己仍是目前登記的 timer，
+                    // 否則會刪掉新寫入的解除紀錄並解除新的禁言。
+                    if (!userUnTimers.TryGetValue(userId, out var current) || !ReferenceEquals(current, toAdd))
+                        return;
+
+                    Log.Information("Unhardmute user {UserId} in guild {GuildId}", userId, guildId);
+
+                    try
+                    {
+                        // unmute the user, this will also remove the timer from the db
+                        await UnmuteUserInternal(guildId, userId).ConfigureAwait(false);
+                    }
+                    catch (Exception ex)
+                    {
+                        // 這裡若再失敗會變成計時器執行緒上的未處理例外，因此單獨攔一次
+                        try
+                        {
+                            await RemoveTimerFromDbAsync(guildId, userId).ConfigureAwait(false); // if unmute errored, just remove unmute from db
+                        }
+                        catch (Exception dbEx)
+                        {
+                            Log.Error(dbEx, "Couldn't remove unmute timer for {UserId} in guild {GuildId}", userId, guildId);
+                        }
+
+                        Log.Warning(ex, "Couldn't unhardmute user {UserId} in guild {GuildId}", userId, guildId);
+                    }
                 }
-                catch (Exception ex)
+                finally
                 {
-                    await RemoveTimerFromDbAsync(guildId, userId); // if unmute errored, just remove unmute from db
-                    Log.Warning(ex, "Couldn't unhardmute user {UserId} in guild {GuildId}", userId, guildId);
+                    gate.Release();
                 }
             }, null, after, Timeout.InfiniteTimeSpan);
 
-            //add it, or stop the old one and add this one
+            //add it, or dispose the old one and add this one
             userUnTimers.AddOrUpdate(userId, (key) =>
             {
                 return toAdd;
             }, (key, old) =>
             {
-                old.Change(Timeout.Infinite, Timeout.Infinite);
+                old.Dispose();
                 return toAdd;
             });
         }
 
         public async Task UnmuteUser(
+            ulong guildId,
+            ulong usrId)
+        {
+            var gate = GetUserGate(guildId, usrId);
+            await gate.WaitAsync().ConfigureAwait(false);
+            try
+            {
+                await UnmuteUserInternal(guildId, usrId).ConfigureAwait(false);
+            }
+            finally
+            {
+                gate.Release();
+            }
+        }
+
+        /// <summary>
+        /// 解除的實際內容。呼叫端必須已持有該使用者的鎖。
+        /// </summary>
+        private async Task UnmuteUserInternal(
             ulong guildId,
             ulong usrId)
         {
@@ -147,17 +247,19 @@ namespace HardMute.Services
 
             if (userTimer.TryRemove(userId, out var removed))
             {
-                removed.Change(Timeout.Infinite, Timeout.Infinite);
+                removed.Dispose();
             }
         }
 
+        /// <summary>
+        /// 刪除該使用者在資料庫中的解除紀錄。
+        /// 條件一次刪除全部符合的紀錄，藉此清掉舊版可能留下的重複資料。
+        /// </summary>
         private async Task RemoveTimerFromDbAsync(ulong guildId, ulong userId)
         {
             using var uow = Database.DBContext.GetDbContext();
-            var toDelete = uow.UnmuteTimer.FirstOrDefault(x => x.GuildId == guildId && x.UserId == userId);
-
-            if (toDelete is not null)
-                uow.Remove(toDelete);
+            var toDelete = uow.UnmuteTimer.Where(x => x.GuildId == guildId && x.UserId == userId);
+            uow.UnmuteTimer.RemoveRange(toDelete);
 
             await uow.SaveChangesAsync();
         }

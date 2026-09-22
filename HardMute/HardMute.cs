@@ -60,8 +60,10 @@ namespace HardMute
 
                 try
                 {
-                    await _service.TimedHardMute(target, time.Time);
-                    await ctx.SendConfirmAsync($"{Format.Bold(target.ToString())} 已被 **強制禁止** __文字聊天__，持續 {time.Time.TotalMinutes} 分鐘。");
+                    if (await _service.TimedHardMute(target, time.Time))
+                        await ctx.SendConfirmAsync($"{Format.Bold(target.ToString())} 已被 **強制禁止** __文字聊天__，持續 {time.Time.TotalMinutes} 分鐘。");
+                    else
+                        await ctx.SendErrorAsync("外掛正在卸載，未執行禁言，請稍後再試");
                 }
                 catch (Exception ex)
                 {

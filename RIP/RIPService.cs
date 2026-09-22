@@ -61,24 +61,19 @@ namespace RIP.Service
         private async Task<byte[]> GetRipPictureFactory(string text, Uri avatarUrl)
         {
             using var bg = Image.Load<Rgba32>(await _imgs.GetImageDataAsync(new Uri("https://cdn.nadeko.bot/other/rip/rip.png")));
+            // cache 只放原始下載內容，縮圖與圓角一律在本地處理。
+            // 若把處理後的圖存回原始 URL 這把 key，其他功能取到的頭像會變成 85x85 的縮圖。
             var result = await _c.GetImageDataAsync(avatarUrl);
             if (!result.TryPickT0(out var data, out _))
             {
                 using var http = _httpFactory.CreateClient();
                 data = await http.GetByteArrayAsync(avatarUrl);
-                using (var avatarImg = Image.Load<Rgba32>(data))
-                {
-                    avatarImg.Mutate(x => x.Resize(85, 85).ApplyRoundedCorners(42));
-                    await using var avStream = await avatarImg.ToStreamAsync();
-                    data = avStream.ToArray();
-                    DrawAvatar(bg, avatarImg);
-                }
-
                 await _c.SetImageDataAsync(avatarUrl, data);
             }
-            else
+
+            using (var avatarImg = Image.Load<Rgba32>(data))
             {
-                using var avatarImg = Image.Load<Rgba32>(data);
+                avatarImg.Mutate(x => x.Resize(85, 85).ApplyRoundedCorners(42));
                 DrawAvatar(bg, avatarImg);
             }
 

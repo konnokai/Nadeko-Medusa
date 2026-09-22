@@ -22,7 +22,8 @@ namespace HardMute.Database
             conn.Open();
             using (var com = conn.CreateCommand())
             {
-                com.CommandText = "PRAGMA journal_mode=WAL; PRAGMA synchronous=OFF";
+                // synchronous=OFF 在系統或電源異常時可能遺失已回報成功的交易，改用 NORMAL
+                com.CommandText = "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL";
                 com.ExecuteNonQuery();
             }
             return context;

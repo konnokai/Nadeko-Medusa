@@ -19,6 +19,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RemindInstantNoodles", "Rem
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RIP", "RIP\RIP.csproj", "{B594F242-4301-4B52-9AE2-74F87397E5EA}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nadeko-Medusa.Tests", "Nadeko-Medusa.Tests\Nadeko-Medusa.Tests.csproj", "{4F076BC7-1346-42F8-949B-B68B36EA8D4D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,10 @@ Global
 		{B594F242-4301-4B52-9AE2-74F87397E5EA}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B594F242-4301-4B52-9AE2-74F87397E5EA}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B594F242-4301-4B52-9AE2-74F87397E5EA}.Release|Any CPU.Build.0 = Release|Any CPU
+		{4F076BC7-1346-42F8-949B-B68B36EA8D4D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{4F076BC7-1346-42F8-949B-B68B36EA8D4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{4F076BC7-1346-42F8-949B-B68B36EA8D4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{4F076BC7-1346-42F8-949B-B68B36EA8D4D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

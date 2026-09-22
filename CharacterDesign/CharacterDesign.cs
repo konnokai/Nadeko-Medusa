@@ -57,7 +57,13 @@ namespace CharacterDesign
             if (string.IsNullOrEmpty(designName) || string.IsNullOrEmpty(charAvatar) || string.IsNullOrEmpty(playingList))
                 return;
 
-            (bool, CharacterDesignService.CharacterDesign?) result = await _service.AddCharDesignAsync(designName, charAvatar, playingList).ConfigureAwait(false);
+            if (!designName.IsValidDesignName())
+            {
+                await ctx.SendErrorAsync("人設名稱不合法");
+                return;
+            }
+
+            (bool, CharacterDesignService.CharacterDesign?, string?) result = await _service.AddCharDesignAsync(designName, charAvatar, playingList).ConfigureAwait(false);
 
             if (result.Item1 && result.Item2 != null)
             {
@@ -72,7 +78,7 @@ namespace CharacterDesign
                 await ctx.Channel.SendMessageAsync(null, false, embed.Build());
             }
             else
-                await ctx.SendErrorAsync("人設已存在");
+                await ctx.SendErrorAsync(result.Item3 ?? $"人設 `{designName}` 已存在");
         }
 
         [cmd(["AddCharDesignPlayingStatus", "acdps"])]
@@ -82,7 +88,13 @@ namespace CharacterDesign
             if (string.IsNullOrEmpty(designName) || string.IsNullOrEmpty(playingList))
                 return;
 
-            (bool, CharacterDesignService.CharacterDesign?) result = _service.AddCharDesignPlayingStatus(designName, playingList);
+            if (!designName.IsValidDesignName())
+            {
+                await ctx.SendErrorAsync("人設名稱不合法");
+                return;
+            }
+
+            (bool, CharacterDesignService.CharacterDesign?, string?) result = _service.AddCharDesignPlayingStatus(designName, playingList);
 
             if (result.Item1 && result.Item2 != null)
             {
@@ -96,7 +108,7 @@ namespace CharacterDesign
                 await ctx.Channel.SendMessageAsync(null, false, embed.Build());
             }
             else
-                await ctx.SendErrorAsync("人設狀態新增失敗");
+                await ctx.SendErrorAsync(result.Item3 ?? $"人設 `{designName}` 不存在或內容損壞");
         }
 
         [cmd(["ChangeCharDesign", "ccd"])]
@@ -105,6 +117,12 @@ namespace CharacterDesign
         {
             if (string.IsNullOrEmpty(designName))
                 return;
+
+            if (!designName.IsValidDesignName())
+            {
+                await ctx.SendErrorAsync("人設名稱不合法");
+                return;
+            }
 
             if (await _service.ChangeCharDesignAsync(designName).ConfigureAwait(false))
                 await ctx.SendConfirmAsync("人設切換成功!");
@@ -148,6 +166,12 @@ namespace CharacterDesign
             if (string.IsNullOrEmpty(designName))
                 designName = _client.CurrentUser.Username;
 
+            if (!designName.IsValidDesignName())
+            {
+                await ctx.SendErrorAsync("人設名稱不合法");
+                return;
+            }
+
             (bool, CharacterDesignService.CharacterDesign?) result = await _service.SaveCharDesignAsync(designName).ConfigureAwait(false);
 
             if (result.Item1 && result.Item2 != null)
@@ -172,6 +196,12 @@ namespace CharacterDesign
         {
             if (string.IsNullOrEmpty(designName))
                 designName = _client.CurrentUser.Username;
+
+            if (!designName.IsValidDesignName())
+            {
+                await ctx.SendErrorAsync("人設名稱不合法");
+                return;
+            }
 
             await ctx.SendYesNoConfirmAsync(_response, _client, $"確定要刪除 {designName} 的人設嗎?", async (action) =>
             {

@@ -5,7 +5,6 @@ namespace MuteReborn.Database
 {
     public class DBContext : DbContext
     {
-        public DbSet<BetGuildConfigs> BetGuildConfigs { get; set; }
         public DbSet<MuteRebornGuildConfigs> MuteRebornGuildConfigs { get; set; }
         public DbSet<MuteRebornTicket> MuteRebornTickets { get; set; }
 
@@ -24,7 +23,8 @@ namespace MuteReborn.Database
             conn.Open();
             using (var com = conn.CreateCommand())
             {
-                com.CommandText = "PRAGMA journal_mode=WAL; PRAGMA synchronous=OFF";
+                // synchronous=OFF 在系統或電源異常時可能遺失已回報成功的交易，改用 NORMAL
+                com.CommandText = "PRAGMA journal_mode=WAL; PRAGMA synchronous=NORMAL";
                 com.ExecuteNonQuery();
             }
             return context;
