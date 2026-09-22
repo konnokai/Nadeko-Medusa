@@ -5,6 +5,7 @@ using Discord.WebSocket;
 using NadekoBot.Common;
 using NadekoBot.Extensions;
 using NadekoBot.Medusa;
+using NadekoBot.Modules.Utility.AiAgent.Prompts;
 using NadekoBot.Services;
 using Serilog;
 
@@ -23,13 +24,16 @@ namespace CharacterDesign
             ImagesConfig ic,
             IHttpClientFactory factory,
             IImageCache images,
-            DbService db)
+            DbService db,
+            PromptLibrary promptLibrary,
+            BotConfigService botConfig,
+            IReplacementService replacement)
         {
             _client = client;
             _service = service;
             _response = new ResponseBuilder(botStrings, messageSenderService, client);
 
-            _service.Inject(client, ic, factory, images, db);
+            _service.Inject(client, ic, factory, images, db, promptLibrary, botConfig, replacement);
         }
 
         public override ValueTask InitializeAsync()

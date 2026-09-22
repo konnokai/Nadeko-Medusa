@@ -1,8 +1,10 @@
 ﻿using Discord;
 using Discord.WebSocket;
+using NadekoBot.Common;
 using NadekoBot.Db;
 using NadekoBot.Db.Models;
 using NadekoBot.Medusa;
+using NadekoBot.Modules.Utility.AiAgent.Prompts;
 using NadekoBot.Services;
 using Newtonsoft.Json;
 using Serilog;
@@ -12,21 +14,38 @@ namespace CharacterDesign.Service
     [svc(Lifetime.Singleton)]
     public class CharacterDesignService
     {
+        private const string SOUL_FILE = "SOUL.md";
+        private const string OPERATOR_FILE = "OPERATOR.md";
+        private const string BANNER_FILE = "banner.png";
+
         private DiscordSocketClient _client;
         private ImagesConfig _ic;
         private IHttpClientFactory _httpFactory;
         private IImageCache _images;
         private DbService _db;
+        private PromptLibrary _promptLibrary;
+        private BotConfigService _botConfig;
+        private IReplacementService _replacement;
 
         // 暫時想不到好的方案讓 Nadeko 可以自動注入
         // 直接在建構式注入會有問題 InvalidOperationException: Unable to resolve service for type while attempting to activate
-        internal void Inject(DiscordSocketClient client, ImagesConfig ic, IHttpClientFactory factory, IImageCache images, DbService db)
+        internal void Inject(DiscordSocketClient client,
+            ImagesConfig ic,
+            IHttpClientFactory factory,
+            IImageCache images,
+            DbService db,
+            PromptLibrary promptLibrary,
+            BotConfigService botConfig,
+            IReplacementService replacement)
         {
             _client = client;
             _ic = ic;
             _httpFactory = factory;
             _images = images;
             _db = db;
+            _promptLibrary = promptLibrary;
+            _botConfig = botConfig;
+            _replacement = replacement;
         }
 
         public async Task<(bool, CharacterDesign?)> AddCharDesignAsync(string designName, string charAvatar, string playingList)
@@ -124,6 +143,10 @@ namespace CharacterDesign.Service
                 await _client.CurrentUser.ModifyAsync((x) => x.Username = designName).ConfigureAwait(false);
                 await _client.CurrentUser.ModifyAsync((x) => x.Avatar = new Image(designName.ToDesignPath() + "avatar.png")).ConfigureAwait(false);
 
+                var bannerPath = designName.ToDesignPath() + BANNER_FILE;
+                if (File.Exists(bannerPath))
+                    await _client.CurrentUser.ModifyAsync((x) => x.Banner = new Image(bannerPath)).ConfigureAwait(false);
+
                 if (File.Exists($"{designName.ToDesignPath()}xp_bg.png"))
                     _ic.ModifyConfig((act) => act.Xp.Bg = new Uri($"file://{AppDomain.CurrentDomain.BaseDirectory}{designName.ToDesignPath()}xp_bg.png"));
 
@@ -139,7 +162,17 @@ namespace CharacterDesign.Service
                             config.Add(new RotatingPlayingStatus() { Type = item.Type, Status = item.Status });
                         await uow.SaveChangesAsync();
                     }
+
+                    // 輪換開關可能被 .setgame / .setstream 關掉，切換人設時重新開啟並立即套用第一筆，不用等下一輪計時器
+                    _botConfig.ModifyConfig(bs => bs.RotateStatuses = true);
+                    await ApplyPlayingStatusAsync(characterDesign.PlayingList[0]).ConfigureAwait(false);
                 }
+
+                // SOUL.md / OPERATOR.md 是 PromptLibrary 的全域人格檔案，切換人設時一併套用該人設保存的版本
+                var promptsUpdated = await TryApplyPromptAsync(PromptKind.Soul, designName).ConfigureAwait(false);
+                promptsUpdated |= await TryApplyPromptAsync(PromptKind.Operator, designName).ConfigureAwait(false);
+                if (promptsUpdated)
+                    await _promptLibrary.ReloadAsync().ConfigureAwait(false);
 
                 return true;
             }
@@ -148,6 +181,40 @@ namespace CharacterDesign.Service
                 Log.Warning(ex, "");
                 return false;
             }
+        }
+
+        /// <summary>
+        /// 立即套用單一 PlayingStatus 到 Discord 上線狀態。
+        /// 流程與 BotActivityService 的輪換一致：先做替換字串處理，CustomStatus 走 SetCustomStatusAsync，其餘用 SetGameAsync。
+        /// </summary>
+        private async Task ApplyPlayingStatusAsync(RotatingPlayingStatus status)
+        {
+            var text = await _replacement.ReplaceAsync(status.Status, new ReplacementContext(client: _client)).ConfigureAwait(false)
+                       ?? status.Status;
+
+            if (status.Type == DbActivityType.CustomStatus)
+                await _client.SetCustomStatusAsync(text).ConfigureAwait(false);
+            else
+                await _client.SetGameAsync(text, null, (ActivityType)status.Type).ConfigureAwait(false);
+        }
+
+        /// <summary>
+        /// 把人設資料夾內對應的 PromptLibrary 檔案寫回全域 prompt。
+        /// 檔案不存在時回傳 false 並保留目前內容；寫入失敗只記錄 warning，由呼叫端決定是否重新載入。
+        /// </summary>
+        private async Task<bool> TryApplyPromptAsync(PromptKind kind, string designName)
+        {
+            var fileName = kind == PromptKind.Soul ? SOUL_FILE : OPERATOR_FILE;
+            var path = designName.ToDesignPath() + fileName;
+            if (!File.Exists(path))
+                return false;
+
+            var content = await File.ReadAllTextAsync(path).ConfigureAwait(false);
+            if (_promptLibrary.TryWrite(kind, content, out var error))
+                return true;
+
+            Log.Warning("CharacterDesign: failed to apply {FileName} for {DesignName}: {Error}", fileName, designName, error);
+            return false;
         }
 
         public string[]? ListCharDesign()
@@ -183,6 +250,33 @@ namespace CharacterDesign.Service
                 return (false, null);
             }
 
+            // banner 是選配，抓不到或不存在都不影響人設保存
+            try
+            {
+                var bannerPath = designName.ToDesignPath() + BANNER_FILE;
+                var bannerId = _client.CurrentUser.BannerId;
+                if (string.IsNullOrEmpty(bannerId))
+                {
+                    if (File.Exists(bannerPath))
+                        File.Delete(bannerPath);
+                }
+                else
+                {
+                    var bannerUrl = CDN.GetUserBannerUrl(_client.CurrentUser.Id, bannerId, 1024, ImageFormat.Auto);
+                    using var http = _httpFactory.CreateClient();
+                    using var sr = await http.GetAsync(bannerUrl, HttpCompletionOption.ResponseHeadersRead).ConfigureAwait(false);
+                    if (sr.IsImage())
+                    {
+                        var imgData = await sr.Content.ReadAsByteArrayAsync().ConfigureAwait(false);
+                        await File.WriteAllBytesAsync(bannerPath, imgData).ConfigureAwait(false);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Warning(ex, "CharacterDesign: failed to save banner for {DesignName}", designName);
+            }
+
             try
             {
                 var xpByte = await _images.GetXpBackgroundImageAsync();
@@ -201,6 +295,9 @@ namespace CharacterDesign.Service
                 {
                     var @char = new CharacterDesign() { PlayingList = uow.RotatingStatus.ToList() };
                     await File.WriteAllTextAsync(designName.ToDesignPath() + "design.json", JsonConvert.SerializeObject(@char)).ConfigureAwait(false);
+                    // 一併保存當下生效中的 SOUL.md / OPERATOR.md，之後切換回此人設時可套用
+                    await File.WriteAllTextAsync(designName.ToDesignPath() + SOUL_FILE, _promptLibrary.GetSoul()).ConfigureAwait(false);
+                    await File.WriteAllTextAsync(designName.ToDesignPath() + OPERATOR_FILE, _promptLibrary.GetOperatorDoc()).ConfigureAwait(false);
                     return (true, @char);
                 }
             }
