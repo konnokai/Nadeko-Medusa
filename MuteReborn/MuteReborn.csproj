@@ -5,8 +5,10 @@
 		<!-- Reduces some boilerplate in your .cs files -->
 		<ImplicitUsings>enable</ImplicitUsings>
 
-		<!-- tell .net that this library will be used as a plugin -->
-		<EnableDynamicLoading>true</EnableDynamicLoading>
+		<!-- Medusa 以 AssemblyLoadContext 載入本專案，找不到的相依組件會回退到 bot 已載入的版本
+		     （型別必須與 bot 共用，否則注入 bot 的服務會型別不合）。
+		     deps.json／runtimeconfig.json 會保留：`dotnet ef` 需要它們才能跑設計階段。 -->
+		<EnableDynamicLoading>false</EnableDynamicLoading>
 	</PropertyGroup>
 
 	<ItemGroup>
@@ -43,13 +45,17 @@
         -->
 		<ProjectReference Include="..\nadekobot\src\NadekoBot\NadekoBot.csproj" ReferenceOutputAssembly="False" Configuration="Release">
 			<PrivateAssets>all</PrivateAssets>
+			<!-- 只拿來觸發 bot 建置與取得編譯參考，不把 bot 的輸出與 data/、Migrations/ 內容複製過來 -->
+			<Private>false</Private>
 		</ProjectReference>
 		<Reference Include="Nadeko.Medusa">
 		  <HintPath>..\nadekobot\src\Nadeko.Medusa\bin\Release\net9.0\Nadeko.Medusa.dll</HintPath>
+		  <Private>false</Private>
 		</Reference>
 
 		<Reference Include="NadekoBot">
 			<HintPath>..\nadekobot\src\NadekoBot\bin\Release\net9.0\NadekoBot.dll</HintPath>
+			<Private>false</Private>
 		</Reference>
 	</ItemGroup>
 
