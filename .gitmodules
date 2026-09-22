@@ -1,0 +1,3 @@
+[submodule "nadekobot"]
+	path = nadekobot
+	url = https://github.com/nadeko-bot/nadekobot.git
