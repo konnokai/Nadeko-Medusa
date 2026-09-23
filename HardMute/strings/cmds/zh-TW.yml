@@ -1,0 +1,9 @@
+# key 必須是 C# 方法名稱的小寫（Medusa 以方法名稱查字串，不是指令別名）
+hardmuteasync:
+  desc: "強制禁言"
+  args:
+    - "@某人"
+unhardmuteasync:
+  desc: "取消強制禁言"
+  args:
+    - "@某人"

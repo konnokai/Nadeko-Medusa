@@ -1,0 +1,15 @@
+# 本檔名去除副檔名後是空字串，對應 InvariantCulture 的指令字串查詢。
+# 沒有這個檔案時 Medusa 會先查空 locale 失敗（記一條 Missing ... INF）再退回 en-US（說明會變英文）。
+# 內容是 zh-TW.yml 的複本，兩者必須一致。
+attachremove:
+  desc: "附件移除紀錄"
+  args:
+    - ""
+reactionremove:
+  desc: "移除反應紀錄"
+  args:
+    - ""
+logignore:
+  desc: "忽略紀錄"
+  args:
+    - ""

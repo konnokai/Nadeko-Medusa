@@ -1,4 +1,5 @@
-restban:
+# key 必須是 C# 方法名稱的小寫（Medusa 以方法名稱查字串，不是指令別名）
+restbanasync:
   desc: "從各群 Ban 掉指定的 UserId"
   args:
     - "UserId"

@@ -1,0 +1,26 @@
+# English translation. Source of truth: zh-TW.yml
+# Keys must be the C# method names lowercased (Medusa looks up strings by method name, not alias).
+addchardesign:
+  desc: "Add a character design\n\nPlayingStatus format:\nType:Status|Type:Status...\nType = Playing, Streaming, Listening, Watching, CustomStatus, Competing"
+  args:
+    - "design name avatar url [PlayingStatus]"
+savechardesign:
+  desc: "Save the current character design"
+  args:
+    - "[design name]"
+addchardesignplayingstatus:
+  desc: "Add PlayingStatus entries to a character design\n\nFormat:\nType:Status|Type:Status...\nType = Playing, Streaming, Listening, Watching, CustomStatus, Competing"
+  args:
+    - "design name [PlayingStatus]"
+changechardesign:
+  desc: "Switch to a character design"
+  args:
+    - "design name"
+listchardesign:
+  desc: "List character designs"
+  args:
+    - ""
+deletechardesign:
+  desc: "Delete a character design"
+  args:
+    - "design name"

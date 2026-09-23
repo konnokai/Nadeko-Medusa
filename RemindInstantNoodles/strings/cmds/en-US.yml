@@ -1,0 +1,6 @@
+# English translation. Source of truth: zh-TW.yml
+# Keys must be the C# method names lowercased (Medusa looks up strings by method name, not alias).
+remindinstantnoodles:
+  desc: "Set an instant-noodle reminder"
+  args:
+    - "duration, 3 minutes by default\nminimum 2 minutes, maximum 10 minutes"

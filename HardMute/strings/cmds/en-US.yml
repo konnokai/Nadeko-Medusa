@@ -1,0 +1,10 @@
+# English translation. Source of truth: zh-TW.yml
+# Keys must be the C# method names lowercased (Medusa looks up strings by method name, not alias).
+hardmuteasync:
+  desc: "Hard mute (delete every message the user sends)"
+  args:
+    - "@someone"
+unhardmuteasync:
+  desc: "Remove the hard mute"
+  args:
+    - "@someone"

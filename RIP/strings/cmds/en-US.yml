@@ -1,0 +1,6 @@
+# English translation. Source of truth: zh-TW.yml
+# Keys must be the C# method names lowercased (Medusa looks up strings by method name, not alias).
+ripasync:
+  desc: "RIP"
+  args:
+    - "@User"

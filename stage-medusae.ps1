@@ -7,12 +7,12 @@
     各模組的 bin/Release/<TargetFramework> 只包含模組自己的檔案（相依組件由 bot 提供），
     本腳本只複製這些檔案到 bin/medusae/<模組名稱>/，可直接對應到 bot 的 data/medusae/。
 
-    模組判定方式：資料夾內同時有 <名稱>.csproj 與 cmds.yml（與 csproj 的判定規則一致）。
+    模組判定方式：資料夾內有 <名稱>.csproj，且具備指令字串（cmds.yml 或 strings/cmds/）。
     目標框架從各模組 csproj 的 <TargetFramework> 讀取，不寫死版本，
     升級 .NET 後只要 csproj 改了就會跟著抓對應的輸出資料夾。
 
     複製的檔案：<名稱>.dll、<名稱>.pdb、<名稱>.deps.json、<名稱>.runtimeconfig.json、
-    cmds.yml、res.yml，以及 strings/（若存在）。
+    res.yml，以及 strings/（含 strings/cmds/ 的 .yml，內含一個檔案名稱就是 .yml 的檔案）。
     若來源輸出含有非模組的 .dll，會發出警告（代表相依複製又被打開了）。
 
 .PARAMETER SkipBuild
@@ -38,11 +38,12 @@ $outputRoot = Join-Path $repoRoot 'bin/medusae'
 
 $modules = Get-ChildItem -LiteralPath $repoRoot -Directory | Where-Object {
     (Test-Path -LiteralPath (Join-Path $_.FullName "$($_.Name).csproj")) -and
-    (Test-Path -LiteralPath (Join-Path $_.FullName 'cmds.yml'))
+    ((Test-Path -LiteralPath (Join-Path $_.FullName 'cmds.yml')) -or
+     (Test-Path -LiteralPath (Join-Path $_.FullName 'strings/cmds')))
 } | Sort-Object Name
 
 if (-not $modules) {
-    throw "在 $repoRoot 找不到任何 Medusa 模組（需同時有 <名稱>.csproj 與 cmds.yml）"
+    throw "在 $repoRoot 找不到任何 Medusa 模組（需有 <名稱>.csproj 與 cmds.yml 或 strings/cmds/）"
 }
 
 # 先讀出各模組的目標框架，才知道產物在哪一個 bin/Release/<tfm> 底下
@@ -78,6 +79,18 @@ foreach ($module in $modules) {
         throw "找不到 $name 的產物：$source\$name.dll（csproj 的 TargetFramework 是 $tfm）"
     }
 
+    # .yml（對應 InvariantCulture）必須與 zh-TW.yml 內容一致，否則顯示的說明會是舊的
+    $cmdsDir = Join-Path $module.FullName 'strings/cmds'
+    $invariantFile = Join-Path $cmdsDir '.yml'
+    $sourceFile = Join-Path $cmdsDir 'zh-TW.yml'
+    if ((Test-Path -LiteralPath $invariantFile) -and (Test-Path -LiteralPath $sourceFile)) {
+        $strip = { param($path) (Get-Content -LiteralPath $path | Where-Object { $_ -notmatch '^\s*#' }) -join "`n" }
+        if ((& $strip $invariantFile) -ne (& $strip $sourceFile)) {
+            Write-Warning "$name 的 strings/cmds/.yml 與 zh-TW.yml 內容不一致（註解除外）"
+            Write-Warning "  請把 zh-TW.yml 複製成 .yml，否則空 locale 顯示的說明會與原文脫節"
+        }
+    }
+
     # 目標資料夾整個重做，避免舊版殘留的檔案被一起帶走
     $target = Join-Path $outputRoot $name
     if (Test-Path -LiteralPath $target) {
@@ -91,9 +104,11 @@ foreach ($module in $modules) {
     }
     $files | Copy-Item -Destination $target
 
+    $stringsCopied = $false
     $strings = Join-Path $source 'strings'
     if (Test-Path -LiteralPath $strings) {
         Copy-Item -LiteralPath $strings -Destination $target -Recurse
+        $stringsCopied = $true
     }
 
     $unexpected = Get-ChildItem -LiteralPath $source -File -Filter *.dll |
@@ -104,7 +119,7 @@ foreach ($module in $modules) {
     }
 
     Write-Host "$name ($tfm) -> $target" -ForegroundColor Green
-    Write-Host "    $(($files.Name) -join ', ')"
+    Write-Host "    $(($files.Name) -join ', ')$(if ($stringsCopied) { ' (+ strings/)' })"
 }
 
 # bot 只會讀 outputRoot 下的子資料夾，根目錄的散檔是舊的完整傾印，可以直接刪掉

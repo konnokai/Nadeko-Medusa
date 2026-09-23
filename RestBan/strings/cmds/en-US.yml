@@ -1,0 +1,14 @@
+# English translation. Source of truth: zh-TW.yml
+# Keys must be the C# method names lowercased (Medusa looks up strings by method name, not alias).
+restbanasync:
+  desc: "Ban the given UserId from every server the bot is in"
+  args:
+    - "UserId"
+addrest:
+  desc: "Add a RestBan server"
+  args:
+    - "GuildId"
+delrest:
+  desc: "Remove a RestBan server"
+  args:
+    - "GuildId"

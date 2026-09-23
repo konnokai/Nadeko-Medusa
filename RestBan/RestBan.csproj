@@ -32,7 +32,7 @@
 
 	<!-- Copy shortcut and full strings to output (if they exist) -->
 	<ItemGroup>
-		<None Update="res.yml;cmds.yml;strings/**">
+		<None Update="res.yml;strings/**">
 			<CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
 		</None>
 	</ItemGroup>

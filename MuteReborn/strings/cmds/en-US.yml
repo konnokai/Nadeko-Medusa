@@ -1,0 +1,39 @@
+# English translation. Source of truth: zh-TW.yml
+# Keys must be the C# method names lowercased (Medusa looks up strings by method name, not alias).
+togglemutereborn:
+  desc: "Toggle the MuteReborn feature"
+  args:
+    - ""
+settingmutereborn:
+  desc: "Configure MuteReborn\nBuyMuteRebornTicketCost: currency spent per reborn ticket\n(default 10000, range 1000 ~ 100000)\nEachTicketIncreaseMuteTime: minutes added per ticket\n(default 5, range 5 ~ 120)\nEachTicketDecreaseMuteTime: minutes reduced per ticket\n(default 30, range 5 ~ 120)\nMaxIncreaseMuteTime: maximum minutes that can be added\n(default 30, range 10 ~ 360)\n\nShows the current values when no argument is given"
+  args:
+    - ""
+    - "BuyMuteRebornTicketCost 10000"
+    - "EachTicketIncreaseMuteTime 5"
+    - "EachTicketDecreaseMuteTime 30"
+    - "MaxIncreaseMuteTime 30"
+addmuterebornticketnum:
+  desc: "Add reborn tickets to the given user (negative values allowed)\nRequires ToggleMuteReborn to be enabled first"
+  args:
+    - "1 @someone"
+    - "-1 @someone"
+listmuterebornticketnum:
+  desc: "Show how many reborn tickets everyone holds"
+  args:
+    - ""
+    - "3"
+showmuterebornticketnum:
+  desc: "Show how many reborn tickets you or the given user hold"
+  args:
+    - ""
+    - "@someone"
+buymuterebornticket:
+  desc: "Buy reborn tickets with currency (1 ticket when no amount is given)"
+  args:
+    - ""
+    - "10"
+sine:
+  desc: "SiNe! Ka-chiu-jiu!\nSpend one reborn ticket to put the given user to hard labour (time stacks)\nDuration depends on each server (5 minutes by default)"
+  args:
+    - "@someone"
+    - "(UserId)"

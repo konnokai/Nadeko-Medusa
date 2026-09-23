@@ -1,0 +1,7 @@
+# 本檔名去除副檔名後是空字串，對應 InvariantCulture 的指令字串查詢。
+# 沒有這個檔案時 Medusa 會先查空 locale 失敗（記一條 Missing ... INF）再退回 en-US（說明會變英文）。
+# 內容是 zh-TW.yml 的複本，兩者必須一致。
+remindinstantnoodles:
+  desc: "新增泡麵提醒"
+  args:
+    - "時間，預設三分鐘\n最小兩分鐘，最大十分鐘"

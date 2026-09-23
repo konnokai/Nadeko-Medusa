@@ -1,0 +1,14 @@
+# English translation. Source of truth: zh-TW.yml
+# Keys must be the C# method names lowercased (Medusa looks up strings by method name, not alias).
+attachremove:
+  desc: "Log removed attachments"
+  args:
+    - ""
+reactionremove:
+  desc: "Log removed reactions"
+  args:
+    - ""
+logignore:
+  desc: "Ignore logging in this channel"
+  args:
+    - ""
