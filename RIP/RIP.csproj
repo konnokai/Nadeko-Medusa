@@ -27,6 +27,11 @@
 
 
 	<ItemGroup>
+		<ProjectReference Include="..\nadekobot\src\NadekoBot\NadekoBot.csproj" ReferenceOutputAssembly="False" Configuration="Release">
+			<PrivateAssets>all</PrivateAssets>
+			<!-- 只拿來觸發 bot 建置與取得編譯參考，不把 bot 的輸出與 data/、Migrations/ 內容複製過來 -->
+			<Private>false</Private>
+		</ProjectReference>
 		<Reference Include="Nadeko.Medusa">
 			<HintPath>..\nadekobot\src\Nadeko.Medusa\bin\Release\net9.0\Nadeko.Medusa.dll</HintPath>
 			<Private>false</Private>
