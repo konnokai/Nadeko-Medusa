@@ -1,0 +1,29 @@
+{
+  // 格式說明見 README.md
+  "mcpServers": {
+    "everything": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-everything"],
+      // 沒寫 requiredPerm 時只有 Administrator 能用
+      "requiredPerm": "ManageMessages",
+      // 個別工具的權限，key 是原本的工具名稱。BotOwner = 只有 bot owner
+      "toolPerms": { "echo": "None", "get-env": "BotOwner" }
+    },
+    "fetch": {
+      // Python 的 server 用 uvx 啟動，第一次會下載 Python 和套件
+      "command": "uvx",
+      "args": ["mcp-server-fetch"],
+      "disabled": true
+    },
+    "my-api": {
+      "type": "http",
+      "url": "http://192.168.90.21:9000/mcp",
+      // ${名稱} 會換成 gateway 容器的環境變數
+      "headers": { "Authorization": "Bearer ${MY_API_TOKEN}" },
+      "enabledTools": ["search"],
+      "dataTool": false,
+      "requiredPerm": "None",
+      "disabled": true
+    }
+  }
+}

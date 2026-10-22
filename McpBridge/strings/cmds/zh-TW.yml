@@ -1,0 +1,13 @@
+mcpstatus:
+  desc: "顯示 MCP gateway 上每個 server 的連線狀態和工具數量"
+  args:
+    - ""
+mcpreload:
+  desc: "叫 MCP gateway 重讀 mcp.json，並馬上更新 AI agent 的工具清單"
+  args:
+    - ""
+mcptools:
+  desc: "列出某個 MCP server 的工具和每個工具需要的權限。不加 server 名稱時列出所有 server"
+  args:
+    - ""
+    - "qdrant"

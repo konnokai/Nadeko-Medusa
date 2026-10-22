@@ -11,12 +11,19 @@
 		<ProjectReference Include="..\CharacterDesign\CharacterDesign.csproj" />
 		<ProjectReference Include="..\LogExtension\LogExtension.csproj" />
 		<ProjectReference Include="..\MuteReborn\MuteReborn.csproj" />
+		<ProjectReference Include="..\McpBridge\McpBridge.csproj" />
+		<!-- 兩邊都編進了同一份 Contracts.cs，gateway 用別名區隔，測試裡的協定型別指的是 McpBridge 那份 -->
+		<ProjectReference Include="..\McpGateway\McpGateway.csproj" Aliases="gateway" />
 	</ItemGroup>
 
 	<ItemGroup>
 		<!-- 外掛的公開成員會用到 NadekoBot 的型別，組件參考不會透過 ProjectReference 傳遞到編譯期 -->
 		<Reference Include="NadekoBot">
 			<HintPath>..\nadekobot\src\NadekoBot\bin\Release\net9.0\NadekoBot.dll</HintPath>
+		</Reference>
+		<!-- McpBridge 的類別繼承 Snek，測試要看得到它的基底型別 -->
+		<Reference Include="Nadeko.Medusa">
+			<HintPath>..\nadekobot\src\Nadeko.Medusa\bin\Release\net9.0\Nadeko.Medusa.dll</HintPath>
 		</Reference>
 	</ItemGroup>
 </Project>

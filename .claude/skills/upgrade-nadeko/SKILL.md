@@ -55,6 +55,7 @@ foreach ($n in (Get-ChildItem -Directory | ? { (Test-Path "$($_.Name)/$($_.Name)
 
   `Task` 改成 `Task<T>` 時，忽略回傳值的呼叫照樣能編譯。7.6 的 `AddReminderAsync` 就是這樣：達到上限時回傳 false，外掛卻照樣回「已設定提醒」。
 - **注入的服務**：外掛建構式注入的每個 bot 型別，看 diff 裡有沒有改到外掛呼叫的那幾個方法的行為。
+- **McpBridge 用到的私有成員**：`git -C nadekobot diff <old> <new> -- src/NadekoBot/Modules/Utility/AiAgent`。對照 `McpBridge/BotInternals.cs` 列的成員。名稱還在但用法變了（例如 `AiToolRegistry` 多了一個快取欄位），編譯和測試都抓不到，要人工看。
 
 完成條件：外掛用到的每個 bot 方法都對照過 diff，每個都標成「沒變」、「已修」或「列進 Found」。
 

@@ -10,6 +10,12 @@ NadekoBot 的 Medusa 外掛集合。每個外掛一個資料夾（`<名稱>/<名
 - 相依組件由 bot 提供（`EnableDynamicLoading=false`、`Private=false`）。外掛的 `PackageReference` 版本要跟 `nadekobot/src/NadekoBot/NadekoBot.csproj` 一致，否則執行期型別不合。
 - `nadekobot/` 在 `.gitmodules` 有登記，但 gitlink 沒有被追蹤，所以 `git status` 會顯示 `?? nadekobot/`。使用者決定暫時不固定版本，不要 `git add nadekobot`。
 
+## McpBridge 與 McpGateway
+
+- `McpGateway/` 是獨立的 sidecar 程序，不是 medusa 模組（沒有 `strings/cmds`，`stage-medusae.ps1` 不會打包它）。它自己帶相依組件，不受上面「相依由 bot 提供」的規則限制。部署方式和 `mcp.json` 格式寫在 `McpGateway/README.md`。
+- 兩邊共用的 HTTP 協定只寫在 `McpGateway/Contracts.cs`，McpBridge 用 `<Compile Include>` 連結同一個檔案。改協定只改這一個檔案。
+- McpBridge 用反射修改 bot 的私有成員，成員清單在 `McpBridge/BotInternals.cs`。bot 升級後，測試裡的「BotInternals：成員都找得到」失敗，就是這些成員改名或改型別了。
+
 ## 驗證
 
 - 測試：`dotnet run --project Nadeko-Medusa.Tests -c Release`。這是純 assert 的 console 程式，結束碼等於失敗數。它沒有 mock，從 bot 注入的服務（例如 `RemindService`）測不到，要在回報裡明講。

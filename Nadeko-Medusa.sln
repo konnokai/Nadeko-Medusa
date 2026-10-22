@@ -21,6 +21,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RIP", "RIP\RIP.csproj", "{B
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nadeko-Medusa.Tests", "Nadeko-Medusa.Tests\Nadeko-Medusa.Tests.csproj", "{4F076BC7-1346-42F8-949B-B68B36EA8D4D}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "McpBridge", "McpBridge\McpBridge.csproj", "{37F318FF-4400-4939-8446-77C7279AB9B2}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "McpGateway", "McpGateway\McpGateway.csproj", "{97DCF620-F877-4406-B724-2E0B06523945}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -62,6 +66,14 @@ Global
 		{4F076BC7-1346-42F8-949B-B68B36EA8D4D}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{4F076BC7-1346-42F8-949B-B68B36EA8D4D}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{4F076BC7-1346-42F8-949B-B68B36EA8D4D}.Release|Any CPU.Build.0 = Release|Any CPU
+		{37F318FF-4400-4939-8446-77C7279AB9B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{37F318FF-4400-4939-8446-77C7279AB9B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{37F318FF-4400-4939-8446-77C7279AB9B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{37F318FF-4400-4939-8446-77C7279AB9B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{97DCF620-F877-4406-B724-2E0B06523945}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{97DCF620-F877-4406-B724-2E0B06523945}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{97DCF620-F877-4406-B724-2E0B06523945}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{97DCF620-F877-4406-B724-2E0B06523945}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

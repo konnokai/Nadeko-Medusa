@@ -1,0 +1,15 @@
+# English translation. Source of truth: zh-TW.yml
+# Keys must be the C# method names lowercased (Medusa looks up strings by method name, not alias).
+mcpstatus:
+  desc: "Show the connection state and tool count of each server on the MCP gateway"
+  args:
+    - ""
+mcpreload:
+  desc: "Make the MCP gateway reread mcp.json, then update the AI agent's tool list at once"
+  args:
+    - ""
+mcptools:
+  desc: "List the tools of an MCP server and the permission each one needs. Without a server name, list all servers"
+  args:
+    - ""
+    - "qdrant"
