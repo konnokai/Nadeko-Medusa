@@ -12,7 +12,7 @@ NadekoBot 的 Medusa 外掛集合。每個外掛一個資料夾（`<名稱>/<名
 
 ## McpBridge 與 McpGateway
 
-- `McpGateway/` 是獨立的 sidecar 程序，不是 medusa 模組（沒有 `strings/cmds`，`stage-medusae.ps1` 不會打包它）。它自己帶相依組件，不受上面「相依由 bot 提供」的規則限制。部署方式和 `mcp.json` 格式寫在 `McpGateway/README.md`。
+- `McpGateway/` 是獨立的 sidecar 程序，不是 medusa 模組（沒有 `strings/cmds`，`stage-medusae.ps1` 不會打包它）。它自己帶相依組件，不受上面「相依由 bot 提供」的規則限制。它是 net10.0，其他外掛跟著 bot 用 net9.0。`Nadeko-Medusa.Tests` 參考了它，所以也是 net10.0。部署方式和 `mcp.json` 格式寫在 `McpGateway/README.md`。
 - 兩邊共用的 HTTP 協定只寫在 `McpGateway/Contracts.cs`，McpBridge 用 `<Compile Include>` 連結同一個檔案。改協定只改這一個檔案。
 - McpBridge 用反射修改 bot 的私有成員，成員清單在 `McpBridge/BotInternals.cs`。bot 升級後，測試裡的「BotInternals：成員都找得到」失敗，就是這些成員改名或改型別了。
 

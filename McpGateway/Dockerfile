@@ -1,13 +1,13 @@
-FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
 WORKDIR /src
 COPY McpGateway.csproj .
 RUN dotnet restore
 COPY . .
 RUN dotnet publish -c Release -o /out --no-restore
 
-FROM mcr.microsoft.com/dotnet/aspnet:9.0
+FROM mcr.microsoft.com/dotnet/aspnet:10.0
 
-# stdio 類型的 MCP server 大多用 npx 啟動。Debian 套件庫的 Node 太舊，直接從官方映像檔複製 Node 22。
+# stdio 類型的 MCP server 大多用 npx 啟動。系統套件庫的 Node 太舊，直接從官方映像檔複製 Node 22。
 # 鎖定版本，重新 build 才不會換到沒測過的 Node。要升級時兩行一起改
 COPY --from=node:22.23.4-bookworm-slim /usr/local/bin/node /usr/local/bin/node
 COPY --from=node:22.23.4-bookworm-slim /usr/local/lib/node_modules /usr/local/lib/node_modules

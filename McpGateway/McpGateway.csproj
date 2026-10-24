@@ -1,10 +1,10 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 	<PropertyGroup>
-		<TargetFramework>net9.0</TargetFramework>
+		<TargetFramework>net10.0</TargetFramework>
 		<Nullable>enable</Nullable>
 		<ImplicitUsings>enable</ImplicitUsings>
 		<!-- 這是獨立的 sidecar 程序，不是 medusa 模組。它的相依組件不受「由 bot 提供」的規則限制，
-		     MCP SDK 需要的 System.Text.Json 10 只在這個程序裡載入，不會跟 bot 的版本衝突。 -->
+		     所以不用跟 bot 一起留在 net9.0。MCP SDK 需要的 System.Text.Json 10 只在這個程序裡載入，不會跟 bot 的版本衝突。 -->
 	</PropertyGroup>
 
 	<ItemGroup>

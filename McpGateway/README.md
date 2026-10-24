@@ -16,7 +16,7 @@ Discord → NadekoBot
 - **McpGateway**：獨立程序。讀 `mcp.json`，連線每個 MCP server，把它們的工具整理成一份清單。
 - **McpBridge**：medusa。定期向 gateway 拿工具清單，把工具登記進 bot 的 AI 工具清單。AI 呼叫工具時轉給 gateway。
 
-MCP SDK 需要 `System.Text.Json` 10，bot 是 net9.0。SDK 放在 gateway 程序裡，就不會跟 bot 的型別衝突。McpBridge 只用 bot 已有的組件。
+MCP SDK 需要 `System.Text.Json` 10。gateway 是 net10.0，內建這一版；bot 和 McpBridge 是 net9.0。SDK 放在 gateway 程序裡，就不會跟 bot 的型別衝突。McpBridge 只用 bot 已有的組件。
 
 ## 部署
 
@@ -162,7 +162,7 @@ docker compose up -d --build
 ## 限制
 
 - McpBridge 用反射修改 bot 的私有成員（`AiToolRegistry`、`DataToolSearchService`）。bot 升級後這些成員可能改名。McpBridge 載入時會先檢查，找不到就記錄錯誤並停用，不會讓 bot 當掉。`Nadeko-Medusa.Tests` 也會檢查。
-- gateway 的映像檔內建 Node.js 22（給 `npx` 用）和 uv（給 `uvx` 用），版本鎖在 `Dockerfile`。`uvx` 會自己下載 Python，第一次啟動要連得到網路。
+- gateway 的映像檔是 `aspnet:10.0`（Ubuntu 24.04），內建 Node.js 22（給 `npx` 用）和 uv（給 `uvx` 用），版本鎖在 `Dockerfile`。`uvx` 會自己下載 Python，第一次啟動要連得到網路。
 - 映像檔沒有 .NET SDK，不能用 `dnx`。這類 server 改用 HTTP 模式另外跑一個容器，在 `mcp.json` 填 `url`。
 - MCP 工具回傳的圖片、音訊等非文字內容不會轉給 AI，只會顯示「省略」。
 - 資料工具要靠 bot 的語意搜尋模型才找得到。bot 的 log 出現 `Embedding service not ready` 或 ONNX 載入失敗時，資料工具都找不到，這時把 MCP server 設成 `"dataTool": false`。
